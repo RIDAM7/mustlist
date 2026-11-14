@@ -11,6 +11,12 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.14.0)
+      '@mustlist/schema':
+        specifier: workspace:*
+        version: link:packages/schema
+      '@mustlist/validator':
+        specifier: workspace:*
+        version: link:packages/validator
       '@types/node':
         specifier: ^22.20.5
         version: 22.20.5

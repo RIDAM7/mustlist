@@ -19,6 +19,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@mustlist/schema": "workspace:*",
+    "@mustlist/validator": "workspace:*",
     "@types/node": "^22.20.5",
     "eslint": "^10.14.0",
     "prettier": "^3.10.1",
