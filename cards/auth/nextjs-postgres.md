@@ -4,10 +4,10 @@ title: Authentication for a Next.js + Postgres app
 topic: auth
 stack: [nextjs, postgres, typescript]
 summary: >-
-  Use a maintained auth library with database sessions in Postgres, sent in an
-  HttpOnly, Secure, SameSite=Lax cookie. Hash passwords with Argon2id, rate-limit
-  login and reset, authorize in server code (not only in proxy/middleware), and
-  ship email verification and password reset from day one.
+  Use a maintained auth library with Postgres sessions in an HttpOnly, Secure,
+  SameSite=Lax cookie. Hash passwords with Argon2id, rate-limit login and reset,
+  authorize in server code (not only proxy/middleware), and ship email
+  verification and password reset at launch.
 status: draft
 card_version: 0.1.0
 last_verified: null
@@ -24,7 +24,7 @@ checklist:
   - id: hash-passwords
     lens: security
     level: must
-    text: Hash passwords with Argon2id (OWASP minimum m=19 MiB, t=2, p=1); use bcrypt with cost 10 or more only if Argon2id is unavailable.
+    text: Hash passwords with Argon2id at an OWASP minimum (e.g. m=19 MiB, t=2, p=1). If Argon2id is unavailable use scrypt (N=2^17, r=8, p=1); keep bcrypt (cost 10+, 72-byte input limit) for legacy systems.
     why: A leaked database must not reveal passwords.
   - id: secure-session-cookie
     lens: security
@@ -61,7 +61,8 @@ checklist:
   - id: password-rules
     lens: security
     level: should
-    text: Require a long minimum length, allow long passphrases, block known-breached passwords, and skip forced composition rules.
+    text: Require 15+ characters for password-only accounts (8+ if MFA is always required), allow at least 64, block common and breached passwords, and skip composition rules and forced periodic changes.
+    why: NIST SP 800-63B-4 (sec. 3.1.1.2) sets these rules for password verifiers.
   - id: mfa-option
     lens: security
     level: should
@@ -115,7 +116,7 @@ decisions:
 options:
   - id: library-db-sessions
     name: Open-source auth library + Postgres sessions
-    examples: [Better Auth, Auth.js]
+    examples: [Better Auth, "Auth.js (its maintainers now recommend Better Auth for new projects)"]
     best_fit_when:
       - You want to own user data in your own database
       - You want no per-user fees
@@ -153,15 +154,18 @@ versions:
     notes:
       - "`cookies()` and `headers()` are async: await them."
       - "Optimistic route checks live in `middleware.ts`; still authorize in server code."
-      - "Stay on a patched release (CVE-2025-29927 affected middleware authorization)."
+      - "Use 15.2.3 or later: CVE-2025-29927 let a crafted `x-middleware-subrequest` header skip middleware, including auth checks there."
+      - "15.x is Maintenance LTS with security releases through Jan. 31, 2027: stay on the latest 15.x patch or upgrade to 16."
     docs: https://nextjs.org/docs/app/guides/authentication
     context7: https://context7.com/vercel/next.js
   - package: next
     range: ">=16.0.0"
     notes:
-      - "`middleware.ts` is deprecated and renamed to `proxy.ts` (export `proxy`); a codemod handles the rename."
-      - "Proxy runs on the Node.js runtime; treat it as a first, optimistic check only."
+      - "`middleware.ts` is deprecated and renamed to `proxy.ts` (export `proxy`); the `middleware-to-proxy` codemod does the rename."
+      - "Proxy always runs on the Node.js runtime (not configurable). Use it only for optimistic checks that read the session cookie, with no database calls."
+      - "Synchronous `cookies()` and `headers()` access is removed: always await them."
       - "Authorize again where data is read or changed."
+      - "Stay on the latest 16.x patch release; security advisories ship often."
     docs: https://nextjs.org/docs/app/guides/authentication
     context7: https://context7.com/vercel/next.js
 
@@ -193,7 +197,11 @@ verify:
   - id: argon2id-hashes
     lens: security
     type: unit
-    check: Stored password hashes use Argon2id (hash strings start with $argon2id$) or bcrypt with cost >= 10.
+    check: Stored password hashes use Argon2id at or above an OWASP minimum (for example $argon2id$v=19$m=19456,t=2,p=1), or scrypt or bcrypt at the OWASP minimums where Argon2id is unavailable.
+  - id: password-policy
+    lens: security
+    type: integration
+    check: Sign-up and password change reject a 14-character password for a password-only account and a password on the blocklist (with the reason), and accept a 64-character passphrase with spaces.
   - id: session-query-count
     lens: performance
     type: integration
@@ -205,7 +213,13 @@ sources:
   - { title: OWASP Forgot Password Cheat Sheet, url: "https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html" }
   - { title: OWASP Authentication Cheat Sheet, url: "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html" }
   - { title: Next.js Authentication guide, url: "https://nextjs.org/docs/app/guides/authentication" }
-  - { title: NIST SP 800-63B Digital Identity Guidelines, url: "https://pages.nist.gov/800-63-4/sp800-63b.html" }
+  - { title: "NIST SP 800-63B-4: Authentication and Authenticator Management (final, July 2025)", url: "https://pages.nist.gov/800-63-4/sp800-63b.html" }
+  - { title: OWASP Cross-Site Request Forgery Prevention Cheat Sheet, url: "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html" }
+  - { title: Next.js serverActions config (allowedOrigins), url: "https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions" }
+  - { title: Next.js 16 upgrade guide (middleware to proxy), url: "https://nextjs.org/docs/app/guides/upgrading/version-16" }
+  - { title: Next.js support policy, url: "https://nextjs.org/support-policy" }
+  - { title: "GHSA-f82v-jwr5-mffw: Authorization Bypass in Next.js Middleware (CVE-2025-29927)", url: "https://github.com/vercel/next.js/security/advisories/GHSA-f82v-jwr5-mffw" }
+  - { title: Auth.js is now part of Better Auth, url: "https://better-auth.com/blog/authjs-joins-better-auth" }
 ---
 
 ## Why this approach
@@ -216,7 +230,7 @@ For most Next.js + Postgres apps, a maintained open-source auth library with dat
 
 ### Security
 
-Hash passwords with Argon2id, keep sessions in HttpOnly cookies, and rotate the session id on login. Treat proxy/middleware only as a fast first check, and authorize again next to the data, because a middleware-only check was bypassable (CVE-2025-29927). Rate-limit every auth endpoint, and give identical responses so attackers can't discover which emails exist. For data-changing Route Handlers that rely on cookies, keep SameSite=Lax and also check the `Origin` header. Server Actions include an origin check by default; confirm this in the docs for your version.
+Hash passwords with Argon2id, keep sessions in HttpOnly cookies, and rotate the session id on login. Treat proxy/middleware only as a fast first check, and authorize again next to the data, because a middleware-only check was bypassable (CVE-2025-29927). Rate-limit every auth endpoint, and give identical responses so attackers can't discover which emails exist. Server Actions reject requests whose `Origin` host differs from the app's host (list proxy or CDN hosts in `serverActions.allowedOrigins`), but a request with no `Origin` header passes with a warning, so authorize inside every action. For data-changing Route Handlers that rely on cookies, keep SameSite=Lax and check the `Origin` header yourself.
 
 ### Performance & latency
 
@@ -248,9 +262,10 @@ An open-source library costs only your hosting and email sending. Managed provid
 
 ## Notes for reviewers
 
-Check these claims against the sources before setting `verified`:
-- The OWASP Argon2id minimum parameters (m=19 MiB, t=2, p=1) and the bcrypt cost guidance.
-- NIST SP 800-63B (rev. 4) minimum password length when the password is the only factor versus with MFA. Then make `password-rules` specific.
-- The Next.js 16 `proxy.ts` behaviour and the current state of the Server Actions origin check.
-- The maintenance status of the libraries named in `options.examples`.
-- That the docs and Context7 links resolve.
+Fact-checked against the sources in November 2026. Still open before setting `verified`:
+- Better Auth, the first `library-db-sessions` example, hashes with scrypt by default (its docs do not state the cost parameters) and defaults to an 8-character minimum password. Decide whether to add a `better-auth` version entry telling agents to raise the minimum to 15 and to use Argon2id or confirm the scrypt cost meets OWASP.
+- NIST states the `password-rules` requirements as SHALL. Decide whether to raise the item from `should` to `must`.
+- Auth.js stays an example with a qualifier: the Better Auth team has maintained it since September 2025, ships its security fixes, and recommends Better Auth for new projects. Decide whether to drop it. Better Auth itself joined Vercel in July 2026.
+- OWASP prefers `SameSite=Strict` and accepts `Lax`. Confirm `Lax` is the intended default.
+- Next.js 15 security releases end on Jan. 31, 2027. Plan to retire the 15.x version entry then.
+- A verify check (`password-policy`) was added, but `card_version` is still 0.1.0. Bump it if needed.
