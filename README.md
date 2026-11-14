@@ -25,9 +25,14 @@ Only **verified** cards are meant for agents. Drafts are visible on the website 
 
 ## How you will use it
 
-- **Website**: `https://ridamagrawal.com/library`, one page per card (works locally today).
-- **Raw markdown** for agents: add `.md` to any card URL (works locally today).
-- **Planned**: a remote MCP server, an `npx` command (local MCP server, plus `init` to add a card index to your `AGENTS.md`), a JSON API and `llms.txt`.
+These work locally today and will be served at `https://ridamagrawal.com/library`:
+
+- **Website**: one page per card, plus topic and stack pages.
+- **Raw markdown** for agents: add `.md` to any card URL.
+- **JSON API**: `/library/api/index`, `/library/api/cards/<topic>/<stack>`, `/library/api/topics`, `/library/api/stacks`.
+- **`/library/llms.txt`** and **`/library/sitemap.xml`**: verified cards only.
+
+**Planned**: a remote MCP server and an `npx mustlist` command (a local MCP server, plus `init` to add a card index to your `AGENTS.md`).
 
 ## Quick start
 
@@ -40,13 +45,14 @@ pnpm dev
 
 Then open http://localhost:3000/library.
 
-| Command                                      | What it does                                                     |
-| -------------------------------------------- | ---------------------------------------------------------------- |
-| `pnpm dev`                                   | Builds the card data, then starts the website                    |
-| `pnpm validate [paths…]`                     | Checks cards against the spec (`--json`, `--links`, `--changed`) |
-| `pnpm new-card <topic> <stack> [--draft]`    | Creates a card from the template                                 |
-| `pnpm build`                                 | Builds `dist/` (JSON, raw markdown, search index) and the site   |
-| `pnpm test` · `pnpm lint` · `pnpm typecheck` | Tests, lint and formatting, type checks                          |
+| Command                                                     | What it does                                                     |
+| ----------------------------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm dev`                                                  | Builds the card data, then starts the website                    |
+| `pnpm validate [paths…]`                                    | Checks cards against the spec (`--json`, `--links`, `--changed`) |
+| `pnpm new-card <topic> <stack> [--draft]`                   | Creates a card from the template                                 |
+| `pnpm promote <id> --reviewers a,b --level seed\|community` | Marks a reviewed card as verified (maintainers only)             |
+| `pnpm build`                                                | Builds `dist/` (JSON, raw markdown, search index) and the site   |
+| `pnpm test` · `pnpm lint` · `pnpm typecheck`                | Tests, lint and formatting, type checks                          |
 
 ## Repository layout
 

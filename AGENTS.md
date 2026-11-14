@@ -10,16 +10,17 @@ Mustlist is a library of reviewed "build it properly" cards for AI coding agents
 
 Run from the repository root. Scripts are Node-based and work on Windows, macOS and Linux.
 
-| Command                                   | Use                                                        |
-| ----------------------------------------- | ---------------------------------------------------------- |
-| `pnpm install`                            | Install dependencies                                       |
-| `pnpm validate [paths…]`                  | Validate cards (add `--links` to check URLs)               |
-| `pnpm new-card <topic> <stack> [--draft]` | Create a card from `templates/card.md`                     |
-| `pnpm test`                               | Unit and snapshot tests (Vitest)                           |
-| `pnpm lint`                               | ESLint (packages and web) and Prettier check               |
-| `pnpm typecheck`                          | TypeScript checks                                          |
-| `pnpm build`                              | Build `dist/` and the website                              |
-| `pnpm dev`                                | Build `dist/` and start the site at localhost:3000/library |
+| Command                                                     | Use                                                                                     |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `pnpm install`                                              | Install dependencies                                                                    |
+| `pnpm validate [paths…]`                                    | Validate cards (add `--links` to check URLs)                                            |
+| `pnpm new-card <topic> <stack> [--draft]`                   | Create a card from `templates/card.md`                                                  |
+| `pnpm promote <id> --reviewers a,b --level seed\|community` | Mark a reviewed card verified (maintainers only; never run it unless a maintainer asks) |
+| `pnpm test`                                                 | Unit and snapshot tests (Vitest)                                                        |
+| `pnpm lint`                                                 | ESLint (packages and web) and Prettier check                                            |
+| `pnpm typecheck`                                            | TypeScript checks                                                                       |
+| `pnpm build`                                                | Build `dist/` and the website                                                           |
+| `pnpm dev`                                                  | Build `dist/` and start the site at localhost:3000/library                              |
 
 Before you finish a change, run `pnpm typecheck && pnpm lint && pnpm test && pnpm validate`.
 
