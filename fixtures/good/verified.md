@@ -74,7 +74,7 @@ sources:
 
 ## Why this approach
 
-Shared middleware applies the same checks to every route, so a new route cannot skip them by accident.
+Shared middleware applies the same checks to every route, so a new route cannot skip them by accident. Per-route validation is only worth it when every route is different.
 
 ## Lenses
 
