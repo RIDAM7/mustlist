@@ -1,0 +1,30 @@
+name: Correction
+description: Something in a card is wrong, unclear or outdated.
+title: 'Correction: <topic>/<stack>'
+labels: [correction]
+body:
+  - type: input
+    id: card-id
+    attributes:
+      label: Card id
+      description: 'For example auth/nextjs-postgres'
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong
+      description: Quote the field or section, and say what it should say instead.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: Links that support the correction.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        If the card contains harmful content (hidden instructions, commands, links to executables), do not open a public issue: follow SECURITY.md.

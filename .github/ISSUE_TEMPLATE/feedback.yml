@@ -1,0 +1,28 @@
+name: Card feedback
+description: Tell us how a card worked when your agent used it.
+title: 'Feedback: <topic>/<stack>'
+labels: [feedback]
+body:
+  - type: input
+    id: card-id
+    attributes:
+      label: Card id
+      description: 'For example auth/nextjs-postgres'
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - worked
+        - failed
+        - outdated
+        - unclear
+    validations:
+      required: true
+  - type: textarea
+    id: note
+    attributes:
+      label: What happened
+      description: Which agent and versions you used, and what went well or wrong. Never include secrets.

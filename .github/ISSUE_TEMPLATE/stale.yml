@@ -1,0 +1,27 @@
+name: Re-check a card
+description: A verified card needs re-checking (age or a new major version).
+title: 'Re-check: <topic>/<stack>'
+labels: [needs-recheck]
+body:
+  - type: input
+    id: card-id
+    attributes:
+      label: Card id
+      description: 'For example auth/nextjs-postgres'
+    validations:
+      required: true
+  - type: dropdown
+    id: reason
+    attributes:
+      label: Reason
+      options:
+        - Last verified more than 180 days ago
+        - A new major version is not covered
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: For a new major version, give the package, the version and a link to its release notes.

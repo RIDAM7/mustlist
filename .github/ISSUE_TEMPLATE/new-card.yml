@@ -1,0 +1,36 @@
+name: New card
+description: Propose a card for a feature on a stack.
+title: 'New card: <topic>/<stack>'
+labels: [new-card]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the feature before writing the card. The format is in docs/card-spec.md.
+  - type: input
+    id: card-id
+    attributes:
+      label: Card id
+      description: '<topic>/<stack>, for example rate-limiting/nextjs-postgres'
+    validations:
+      required: true
+  - type: textarea
+    id: must-haves
+    attributes:
+      label: Must-haves people forget
+      description: The checklist items you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options and when each fits best
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: Official docs, OWASP, RFCs, NIST or similar.
+    validations:
+      required: true
