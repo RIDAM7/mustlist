@@ -1,0 +1,14 @@
+[
+  {
+    "stack": "express-postgres",
+    "cards": [
+      "example/express-postgres"
+    ]
+  },
+  {
+    "stack": "nextjs-postgres",
+    "cards": [
+      "example/nextjs-postgres"
+    ]
+  }
+]

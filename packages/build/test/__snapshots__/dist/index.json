@@ -1,0 +1,30 @@
+[
+  {
+    "id": "example/express-postgres",
+    "title": "Example feature for an Express + Postgres app",
+    "topic": "example",
+    "stack": [
+      "express",
+      "postgres"
+    ],
+    "summary": "A verified example card used by the validator tests.",
+    "status": "verified",
+    "last_verified": "2026-11-12",
+    "card_version": "1.0.0",
+    "url": "https://example.test/library/example/express-postgres"
+  },
+  {
+    "id": "example/nextjs-postgres",
+    "title": "Example feature for a Next.js + Postgres app",
+    "topic": "example",
+    "stack": [
+      "nextjs",
+      "postgres"
+    ],
+    "summary": "A small but complete draft card used by the validator tests. Every rule should pass on this file.",
+    "status": "draft",
+    "last_verified": null,
+    "card_version": "0.1.0",
+    "url": "https://example.test/library/example/nextjs-postgres"
+  }
+]
