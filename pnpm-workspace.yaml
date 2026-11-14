@@ -5,3 +5,6 @@ packages:
 # pnpm blocks dependency install scripts by default. Allow only the ones we need.
 allowBuilds:
   esbuild: true
+  # Next.js dependencies ship prebuilt binaries; their install scripts are not needed.
+  sharp: false
+  unrs-resolver: false

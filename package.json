@@ -11,7 +11,7 @@
     "build": "pnpm build:data && pnpm --filter @mustlist/web build",
     "build:data": "tsx packages/build/src/cli.ts",
     "test": "vitest run",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && pnpm --filter @mustlist/web lint && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json && pnpm --filter @mustlist/web typecheck",
     "validate": "tsx packages/validator/src/cli.ts",
