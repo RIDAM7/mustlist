@@ -1,0 +1,17 @@
+{
+  "name": "@mustlist/build",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Builds Mustlist cards into dist/ (JSON, raw markdown, search index, llms.txt).",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./search": "./src/search.ts"
+  },
+  "dependencies": {
+    "@mustlist/schema": "workspace:*",
+    "@mustlist/validator": "workspace:*",
+    "minisearch": "^7.2.0"
+  }
+}

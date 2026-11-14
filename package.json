@@ -1,0 +1,30 @@
+{
+  "name": "mustlist-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "pnpm build:data && pnpm --filter @mustlist/web dev",
+    "build": "pnpm build:data && pnpm --filter @mustlist/web build",
+    "build:data": "tsx packages/build/src/cli.ts",
+    "test": "vitest run",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.json && pnpm --filter @mustlist/web typecheck",
+    "validate": "tsx packages/validator/src/cli.ts",
+    "new-card": "tsx scripts/new-card.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "eslint": "^10.14.0",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}

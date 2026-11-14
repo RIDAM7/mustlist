@@ -1,0 +1,16 @@
+# Cards, fixtures and the template are authored content: the validator owns their format.
+cards/
+fixtures/
+templates/
+
+# Generated
+dist/
+.next/
+**/__snapshots__/
+pnpm-lock.yaml
+next-env.d.ts
+
+# Verbatim legal texts
+LICENSE
+LICENSE-CONTENT
+CODE_OF_CONDUCT.md
