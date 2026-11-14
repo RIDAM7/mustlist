@@ -21,6 +21,7 @@ export const OFFICIAL_DOCS_DOMAINS: readonly string[] = [
   'razorpay.com',
   'react.dev',
   'stripe.com',
+  'upstash.com',
   'vercel.com',
 ];
 
