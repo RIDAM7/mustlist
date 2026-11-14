@@ -4,7 +4,8 @@ import { stackTitle, topicTitle } from '@mustlist/schema/site';
 import { CardSearch } from '@/components/card-search';
 import { JsonLd } from '@/components/json-ld';
 import { StatusBadge } from '@/components/status-badge';
-import { getIndex, getTopics, splitId } from '@/lib/data';
+import { buttonVariants } from '@/components/ui/button';
+import { getIndex, getStacks, getTopics, splitId } from '@/lib/data';
 import { breadcrumbJsonLd, collectionJsonLd } from '@/lib/seo';
 import { LIBRARY_URL, SITE_NAME, SITE_PITCH, SITE_TAGLINE } from '@/lib/site';
 
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default function LibraryHub() {
   const cards = getIndex();
   const topics = getTopics();
+  const stacks = getStacks();
   const byId = new Map(cards.map((card) => [card.id, card]));
 
   return (
@@ -60,6 +62,24 @@ export default function LibraryHub() {
                   );
                 })}
               </ul>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="stacks-title" className="space-y-4">
+        <h2 id="stacks-title" className="font-heading text-2xl font-semibold tracking-tight">
+          Stacks
+        </h2>
+        <ul className="flex flex-wrap gap-2">
+          {stacks.map(({ stack, cards: ids }) => (
+            <li key={stack}>
+              <Link
+                href={`/stacks/${stack}`}
+                className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              >
+                {stackTitle(stack)} ({ids.length})
+              </Link>
             </li>
           ))}
         </ul>

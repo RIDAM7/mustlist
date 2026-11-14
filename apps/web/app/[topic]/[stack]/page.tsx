@@ -365,6 +365,12 @@ export default async function CardPage({ params }: PageProps<'/[topic]/[stack]'>
           >
             Suggest a change
           </ExternalLink>
+          <Link href="/discuss" className={buttonVariants({ variant: 'ghost' })}>
+            Discuss
+          </Link>
+          <Link href={`/stacks/${stack}`} className={buttonVariants({ variant: 'ghost' })}>
+            More for {stackTitle(stack)}
+          </Link>
         </div>
       </div>
     </article>

@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { stackTitle, topicTitle } from '@mustlist/schema/site';
+import { Breadcrumbs, CardList } from '@/components/card-list';
 import { JsonLd } from '@/components/json-ld';
-import { StatusBadge } from '@/components/status-badge';
 import { getIndex, getTopics, splitId } from '@/lib/data';
 import { breadcrumbJsonLd, collectionJsonLd, isIndexable, robotsFor } from '@/lib/seo';
 import { LIBRARY_URL, SITE_NAME } from '@/lib/site';
@@ -47,28 +46,11 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
           { name: topicTitle(topic), url },
         ])}
       />
-      <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
-        <Link href="/" className="hover:underline">
-          Library
-        </Link>{' '}
-        › {topicTitle(topic)}
-      </nav>
+      <Breadcrumbs items={[{ name: 'Library', href: '/' }, { name: topicTitle(topic) }]} />
       <h1 className="font-heading text-3xl font-semibold tracking-tight">
         How should I build {topicTitle(topic).toLowerCase()}?
       </h1>
-      <ul className="space-y-4">
-        {cards.map((card) => (
-          <li key={card.id} className="rounded-xl border p-4">
-            <div className="flex items-center justify-between gap-3">
-              <Link href={`/${card.id}`} className="font-medium hover:underline">
-                {stackTitle(splitId(card.id).stack)}
-              </Link>
-              <StatusBadge status={card.status} />
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">{card.summary}</p>
-          </li>
-        ))}
-      </ul>
+      <CardList cards={cards} label={(card) => stackTitle(splitId(card.id).stack)} />
     </div>
   );
 }

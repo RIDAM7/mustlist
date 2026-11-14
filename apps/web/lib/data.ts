@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { CardIndexEntry, CardJSON, TopicEntry } from '@mustlist/schema/types';
+import type { CardIndexEntry, CardJSON, StackEntry, TopicEntry } from '@mustlist/schema/types';
 
 /**
  * Server-only access to the built `dist/` folder (run `pnpm build:data` first).
@@ -33,6 +33,22 @@ export function getTopics(): TopicEntry[] {
   return readJson<TopicEntry[]>('topics.json');
 }
 
+export function getStacks(): StackEntry[] {
+  return readJson<StackEntry[]>('stacks.json');
+}
+
+/** Whole files from `dist/` that the JSON API and llms.txt serve as they are. */
+export type DistFile =
+  'index.json' | 'topics.json' | 'stacks.json' | 'search-index.json' | 'llms.txt';
+
+export function getDistFile(name: DistFile): string {
+  return readDist(name);
+}
+
+export function getCardJsonText(id: string): string | undefined {
+  return knownId(id) ? readDist(`cards/${id}.json`) : undefined;
+}
+
 /** Only ids from the index are read, so request params can never escape `dist/`. */
 function knownId(id: string): boolean {
   return getIndex().some((entry) => entry.id === id);
@@ -44,10 +60,6 @@ export function getCard(id: string): CardJSON | undefined {
 
 export function getRawMarkdown(id: string): string | undefined {
   return knownId(id) ? readDist(`cards/${id}.md`) : undefined;
-}
-
-export function getSearchIndexJson(): string {
-  return readDist('search-index.json');
 }
 
 /** `auth/nextjs-postgres` -> `{ topic: 'auth', stack: 'nextjs-postgres' }` */
