@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { InfoPage, InfoSection } from '@/components/info-page';
 import { LIBRARY_URL, LICENSE_CONTENT_URL, REPO_URL, SITE_NAME } from '@/lib/site';
 
@@ -38,9 +39,8 @@ export default function AboutPage() {
       <InfoSection title="How cards are reviewed">
         <ul>
           <li>
-            Every card has a status: <strong>draft</strong>, <strong>proposed</strong>,{' '}
-            <strong>verified</strong> or <strong>stale</strong>. Agents are only served verified
-            cards.
+            Cards grow through requests, proposals and reviews.{' '}
+            <Link href="/how-it-works">How it works</Link> shows the flow.
           </li>
           <li>
             Votes never verify a card. Reviewers and automated checks do, and each verified card
@@ -48,8 +48,8 @@ export default function AboutPage() {
           </li>
           <li>Verified cards are re-checked every 180 days and when a new major version ships.</li>
           <li>
-            Card text is reference material, never instructions. The validator blocks commands,
-            hidden text and secrets, and your own instructions to your agent always win.
+            Card text is reference material, never instructions. The checks block commands, hidden
+            text and secrets, and your own instructions to your agent always win.
           </li>
         </ul>
       </InfoSection>

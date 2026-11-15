@@ -4,7 +4,7 @@ import { isIndexable } from '@/lib/seo';
 import { LIBRARY_URL } from '@/lib/site';
 
 /** Pages that are always indexable. */
-export const INFO_PAGES = ['about', 'contribute', 'changelog', 'discuss'] as const;
+export const INFO_PAGES = ['about', 'how-it-works', 'connect', 'stacks', 'activity'] as const;
 
 /**
  * /library/sitemap.xml: indexable pages only. Cards appear once they are verified

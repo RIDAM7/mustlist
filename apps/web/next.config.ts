@@ -37,6 +37,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    // Pages folded into the community UI (D-021).
+    return [
+      { source: '/contribute', destination: '/how-it-works', permanent: true },
+      { source: '/discuss', destination: '/requests', permanent: true },
+      { source: '/changelog', destination: '/activity', permanent: true },
+    ];
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
