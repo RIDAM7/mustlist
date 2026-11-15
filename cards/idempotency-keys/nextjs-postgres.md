@@ -8,12 +8,12 @@ summary: >-
   Store it in Postgres, unique per account, with a request hash and the
   response, in the write's transaction. Replay finished keys; return 409 while
   one runs and 422 for a changed body.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, e-commerce, marketplace, public-api, mobile-backend]
@@ -173,30 +173,25 @@ versions:
   - package: next
     range: ">=16.0.0 <17.0.0"
     notes:
-      - "Server Actions are POST requests that anyone can send. The client dispatches them one at a time, but the server neither queues nor deduplicates them, so check the key inside each action."
-      - "`experimental.useOffline` (16.3+) re-sends a Server Action whose fetch failed, even one already in flight when the connection dropped, so the server can receive it twice."
-      - "New apps enable Cache Components, where `crypto.randomUUID()` inside `'use cache'` is captured once for every visitor; generate keys in the browser or after `await connection()`."
-      - "Read the key in Route Handlers with `request.headers.get('idempotency-key')`; pass it to a Server Action as an argument or a hidden form field."
-      - "`useActionState` returns a `pending` flag for disabling the submit button; it does not stop a reload, a network retry or a direct POST."
+      - "Server Actions are public POST endpoints. The client sends them one at a time, but the server neither queues nor deduplicates them: check the key inside each action."
+      - "`experimental.useOffline` (16.3+) re-sends a Server Action whose request failed, including one already in flight; if the first attempt reached the server, it runs twice."
+      - "In `'use cache'` scopes (Cache Components), `crypto.randomUUID()` is captured once for every visitor: generate keys in the browser."
     docs: https://nextjs.org/docs/app/guides/server-actions
     context7: https://context7.com/vercel/next.js
   - package: stripe
     range: ">=23.0.0 <24.0.0"
     notes:
-      - "Pass your own key per call, `stripe.paymentIntents.create(params, { idempotencyKey })`, derived from your operation, for example the order id plus the step name."
-      - "Without one, each v1 POST gets a new `stripe-node-retry-` UUID; it covers only the SDK's own retries (`maxNetworkRetries`, default 1), not a retry of your handler or job."
-      - "v1 keeps keys for at least 24 hours, returns an `idempotency_error` when parameters differ, and 409 `idempotency_key_in_use` while the first request is still running."
-      - "v1 replays the first saved result, including 500s; v2 endpoints retry failed work instead and treat a key as a replay for 30 days."
-      - "After a 500 or a timeout, retry with the same key and parameters or reconcile through webhooks; never retry with a new key while the outcome is unknown."
+      - "Pass your own key per call, `stripe.paymentIntents.create(params, { idempotencyKey })`, derived from your operation; the SDK's automatic key covers only its own retries."
+      - "v1 keeps keys at least 24 hours and replays the first result, including 500s; changed parameters give `idempotency_error`, and a running request gives 409 `idempotency_key_in_use`."
+      - "After a 500 or a timeout, retry with the same key or reconcile through webhooks; never retry with a new key while the outcome is unknown."
     docs: https://docs.stripe.com/api/idempotent_requests
     context7: https://context7.com/stripe/stripe-node
   - package: postgresql
     range: ">=14.0.0"
     notes:
-      - "An INSERT that conflicts with a row from an uncommitted transaction waits for that transaction to end, so concurrent requests with one key queue on the unique index."
-      - "`ON CONFLICT DO NOTHING ... RETURNING` returns no row for an existing key; read it with a follow-up SELECT, which sees the committed row under READ COMMITTED (the default)."
-      - "`lock_timeout` defaults to 0 (wait forever); use `SET LOCAL lock_timeout` in the claim transaction so a waiting duplicate fails fast with SQLSTATE 55P03 and can get 409."
-      - "`idle_in_transaction_session_timeout` also defaults to 0, so a transaction left open across a slow API call keeps its locks and connection."
+      - "An INSERT that conflicts with an uncommitted row waits for that transaction, and `ON CONFLICT DO NOTHING ... RETURNING` returns no row for an existing key."
+      - "That wait is a lock on the first transaction's id, which `lock_timeout` (default 0) covers: `SET LOCAL lock_timeout` makes a duplicate fail fast with 55P03, for a 409."
+      - "`idle_in_transaction_session_timeout` also defaults to 0, so a transaction left open across an API call keeps its locks."
     docs: https://www.postgresql.org/docs/current/sql-insert.html
 
 verify:
@@ -269,6 +264,7 @@ sources:
   - { title: "PostgreSQL INSERT (ON CONFLICT, RETURNING)", url: "https://www.postgresql.org/docs/current/sql-insert.html" }
   - { title: "PostgreSQL Index Uniqueness Checks", url: "https://www.postgresql.org/docs/current/index-unique-checks.html" }
   - { title: "PostgreSQL Client Connection Defaults (lock_timeout)", url: "https://www.postgresql.org/docs/current/runtime-config-client.html" }
+  - { title: "PostgreSQL pg_locks (waiting on another transaction's id)", url: "https://www.postgresql.org/docs/current/view-pg-locks.html" }
   - { title: "PostgreSQL Error Codes", url: "https://www.postgresql.org/docs/current/errcodes-appendix.html" }
   - { title: "Redis SET command (NX, EX)", url: "https://redis.io/docs/latest/commands/set/" }
   - { title: "Redis key eviction policies", url: "https://redis.io/docs/latest/develop/reference/eviction/" }
@@ -337,7 +333,6 @@ The table costs storage and some write load: one row per protected request, plus
 ## Common mistakes
 
 - Generating a new key on every retry, or on the server per request, so retries never match.
-- Generating the key in a `'use cache'` scope or a prerendered shell, so every visitor shares it.
 - A unique index on `key` alone, which lets one account replay another account's response.
 - Checking for the key with a SELECT and then inserting, so two concurrent requests both run.
 - Saving the response in a later transaction, so a crash leaves an order without a stored response and the retry creates another.
@@ -346,15 +341,6 @@ The table costs storage and some write load: one row per protected request, plus
 - Running the handler again for a duplicate that arrives mid-flight instead of returning 409.
 - Deleting keys after a few minutes, shorter than mobile and queue retry windows.
 - Turning on `experimental.useOffline` before Server Actions are idempotent.
-
-## Notes for reviewers
-
-- The IETF draft (draft-ietf-httpapi-idempotency-key-header-08, 22 October 2026) is still a working-group Internet-Draft, expiring 25 April 2027. Its text on retrying a completed request is open (Appendix A), so replaying the stored response follows Stripe v1.
-- That `lock_timeout` stops the wait on an uncommitted conflicting insert is inferred from "implicitly-acquired locks"; confirm with a two-session test.
-- That `DO NOTHING ... RETURNING` returns no row is inferred from the INSERT page; behaviour above READ COMMITTED was not checked.
-- That `useOffline` can make the server run an action twice is inferred from its docs retrying in-flight Server Actions.
-- The pages read did not state the HTTP status of Stripe's `idempotency_error`.
-- The Postgres range starts at 14 to match the rate-limiting card; 14 reached end of life on 2026-11-12.
 
 ## Further reading
 

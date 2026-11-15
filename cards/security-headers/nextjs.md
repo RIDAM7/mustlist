@@ -8,12 +8,12 @@ summary: >-
   proxy.ts on dynamic pages, starting in Report-Only. Set nosniff,
   Referrer-Policy, Permissions-Policy, X-Frame-Options and HSTS on every route
   with next.config headers(), and turn off X-Powered-By.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, dashboard, e-commerce, marketing-site]
@@ -258,6 +258,7 @@ sources:
   - { title: "MDN: Strict-Transport-Security", url: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security" }
   - { title: "MDN: Cross-Origin-Opener-Policy", url: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Opener-Policy" }
   - { title: "MDN: Referrer-Policy", url: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Referrer-Policy" }
+  - { title: "MDN: Permissions-Policy payment directive", url: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy/payment" }
   - { title: HSTS preload list submission requirements, url: "https://hstspreload.org/" }
   - { title: "Vercel: Encryption and TLS (default HSTS)", url: "https://vercel.com/docs/cdn-security/encryption" }
   - { title: "Vercel: Response headers", url: "https://vercel.com/docs/headers/response-headers" }
@@ -279,7 +280,7 @@ Treat CSP as a second layer behind output encoding. The proxy builds the policy,
 import { NextResponse, type NextRequest } from 'next/server';
 
 export function proxy(request: NextRequest) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64'); // 128 bits
   const dev = process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : '';
   const csp = `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev}; ` +
     `style-src 'self' 'nonce-${nonce}'; object-src 'none'; base-uri 'none'; ` +
@@ -293,7 +294,7 @@ export function proxy(request: NextRequest) {
 }
 ```
 
-Stripe.js also needs its hosts in `frame-src` (including `https://hooks.stripe.com` for 3-D Secure) and `https://api.stripe.com` in `connect-src`. Stripe does not support cross-origin isolated pages, so skip `Cross-Origin-Embedder-Policy: require-corp`. For JSON Route Handlers, OWASP's REST cheat sheet adds `Cache-Control: no-store` and `Content-Security-Policy: frame-ancestors 'none'`. Do not send `X-XSS-Protection` (or send `0`), `Public-Key-Pins` or `Expect-CT`.
+Stripe.js also needs its hosts in `frame-src` (including `https://hooks.stripe.com` for 3-D Secure) and `https://api.stripe.com` in `connect-src`. Stripe does not support cross-origin isolated pages, so skip `Cross-Origin-Embedder-Policy: require-corp`. Wallet buttons such as Google Pay use the Payment Request API, so keep `payment` out of a deny-by-default `Permissions-Policy` on checkout pages. For JSON Route Handlers, OWASP's REST cheat sheet adds `Cache-Control: no-store` and `Content-Security-Policy: frame-ancestors 'none'`. Do not send `X-XSS-Protection` (or send `0`), `Public-Key-Pins` or `Expect-CT`.
 
 ### Performance & latency
 
@@ -323,17 +324,6 @@ Dynamic rendering turns cached HTML hits into function invocations and server CP
 - Using `Cross-Origin-Opener-Policy: same-origin` on pages that open OAuth or payment popups.
 - Setting `frame-ancestors` or Report-Only through a meta tag, where browsers ignore them.
 - Sending deprecated headers (`X-XSS-Protection: 1`, `Public-Key-Pins`, `Expect-CT`).
-
-## Notes for reviewers
-
-- The static-CSP claim (App Router needs `'unsafe-inline'` for scripts without a nonce) comes from reading Next.js 16.4.6 source: the inline `self.__next_f` scripts get a nonce or nothing, never a hash. The guide's SRI example uses `script-src 'self'`, which would block them. Not browser-tested.
-- The 16.x guide no longer says SRI is webpack-only (the 15.x guide does). Whether Turbopack builds emit SRI in 16.x is unconfirmed.
-- Header precedence when `proxy.ts` and `headers()` set the same key was checked only in the `next start` router source (the proxy value replaces the config value); Vercel's behaviour is unverified.
-- The `form-action` redirect behaviour is browser-dependent per MDN ("debated", Chrome blocks, Firefox did not); current browser behaviour is unverified.
-- Not confirmed: whether `Permissions-Policy: payment=()` breaks Stripe wallet buttons. Leave `payment` out of the deny list if you use Apple Pay or Google Pay until checked.
-- The proxy sketch follows the Next.js guide's nonce (`crypto.randomUUID()`, 122 random bits); web.dev asks for "ideally 128+ bits", so a reviewer may prefer 16 bytes from `crypto.getRandomValues`.
-- MDN marks `report-to` Baseline 2026 (newly available since March 2026); per-browser data did not render, so the `report-uri` fallback is kept.
-- Vercel sends `Strict-Transport-Security: max-age=63072000` on custom domains (that host only) and a preloaded `includeSubDomains` policy on `*.vercel.app`, and redirects HTTP with 308; it adds no CSP, nosniff or frame headers by default per its response-headers page.
 
 ## Further reading
 

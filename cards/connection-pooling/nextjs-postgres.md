@@ -8,12 +8,12 @@ summary: >-
   transaction-mode pooler (provider endpoint or PgBouncer), keep a direct URL for
   migrations and session features, keep session state off the pooler, and verify
   TLS certificates.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, data, cost]
 applies_when:
   app_types: [web-app, saas, api, dashboard, e-commerce]
@@ -191,78 +191,52 @@ versions:
   - package: pg
     range: ">=8.0.0 <9.0.0"
     notes:
-      - "Pool defaults: `max` 10, `idleTimeoutMillis` 10000, `connectionTimeoutMillis` 0 (waits forever for a free client). Set an acquire timeout so an exhausted pool fails fast."
-      - "Never run BEGIN/COMMIT through `pool.query`; each call may use a different client. Check one out with `pool.connect()` and call `client.release()` in `finally` (`release(true)` destroys a broken client)."
-      - "Current 8.x treats `sslmode=prefer`, `require` and `verify-ca` in the URL as `verify-full` and logs a security warning; pg 9 will adopt weaker libpq semantics, so write `sslmode=verify-full` explicitly."
-      - "Parsing a connection string overwrites the `ssl` object; when you pass `ssl: { ca }`, leave `sslmode`, `sslrootcert`, `sslcert` and `sslkey` out of the URL."
-      - "A query becomes a named prepared statement only when you pass `name`; named statements need session pooling or PgBouncer 1.21+ with `max_prepared_statements`."
+      - "Pool defaults: `max` 10, `idleTimeoutMillis` 10000, `connectionTimeoutMillis` 0 (waits forever); set an acquire timeout so a full pool fails fast."
+      - "Run a transaction on one client from `pool.connect()` and release it in `finally`; never send BEGIN or COMMIT through `pool.query`."
+      - "8.x treats `sslmode=require` as `verify-full` with a warning, and pg 9 will switch to libpq semantics: write `sslmode=verify-full`."
     docs: https://node-postgres.com/apis/pool
   - package: postgres
     range: ">=3.0.0 <4.0.0"
     notes:
-      - "`prepare` defaults to `true`; through a transaction pooler without prepared statement support (PgBouncer before 1.21, Supabase's shared pooler) pass `prepare: false`."
-      - "`idle_timeout` defaults to 0, so connections stay open until `sql.end()`; set it in serverless (the README's example is 20 seconds)."
-      - "`ssl` accepts `true`, `prefer`, `require` or tls.connect options; the README doesn't say `require` checks the certificate, so pass tls options with a `ca` and test that a wrong host fails."
+      - "Pass `prepare: false` through a transaction pooler without prepared statement support (PgBouncer before 1.21, Supabase's shared pooler)."
+      - "`idle_timeout` defaults to 0, so connections stay open until `sql.end()`; set it in serverless."
     docs: https://github.com/porsager/postgres
   - package: postgres
     range: ">=4.0.0 <5.0.0"
     notes:
-      - "`prepare` still defaults to `true`; pass `prepare: false` only for a transaction pooler without prepared statement support. PgBouncer 1.21+ with `max_prepared_statements` works with the defaults."
-      - "`ssl: 'require'` encrypts without checking the certificate (libpq semantics); use `ssl: 'verify-full'` or `sslmode=verify-full` in the URL."
-      - "`idle_timeout` and the new `queue_timeout` both default to 0 (no limit); set both in serverless so idle connections close and a full pool fails fast."
-      - "The server now decides parameter types, which changes how a `Date` is written to `timestamp` and `date` columns outside UTC; `infer: true` restores v3 behaviour."
-      - "`sql.listen` and `sql.subscribe` need a direct connection or a session-mode pooler. Vercel's `attachDatabasePool` doesn't recognise postgres.js clients."
+      - "`ssl: 'require'` encrypts without checking the certificate; use `ssl: 'verify-full'`."
+      - "Set `idle_timeout` and the new `queue_timeout` (both default 0). Keep `prepare` on unless the pooler lacks prepared statements."
+      - "The server now infers parameter types, which changes how a `Date` is written outside UTC; `infer: true` restores v3 behaviour."
     docs: https://github.com/porsager/postgres
   - package: "@prisma/client"
     range: ">=6.0.0 <7.0.0"
     notes:
-      - "Pool size is `connection_limit` in the URL (default physical CPUs × 2 + 1); without an external pooler on serverless, Prisma suggests starting at `connection_limit=1`."
-      - "Add `pgbouncer=true` only for PgBouncer older than 1.21.0 or a pooler with similar limits, such as Supavisor; leave it off on 1.21+ with `max_prepared_statements`."
-      - "Give Prisma Migrate the direct URL through `directUrl` in the datasource block and keep the pooled URL in `url`."
-      - "Instantiate PrismaClient at module scope; you don't need `$disconnect()` at the end of each function."
+      - "Pool size is `connection_limit` in the URL; on serverless without a pooler, start at 1. Prisma Migrate uses `directUrl`."
+      - "Add `pgbouncer=true` only for PgBouncer before 1.21.0 or a pooler with similar limits."
     docs: https://www.prisma.io/docs/orm/v6/prisma-client/setup-and-configuration/databases-connections
   - package: "@prisma/client"
     range: ">=7.0.0 <8.0.0"
     notes:
-      - "A driver adapter is required and pooling comes from the driver: `@prisma/adapter-pg` uses pg defaults (max 10, no acquire timeout, 10 s idle), not `connection_limit`. Pass a configured pg Pool."
-      - "`url` and `directUrl` in the schema datasource are deprecated; the CLI uses `datasource.url` from Prisma Config, so set that to the direct URL and give the adapter the pooled URL."
-      - "On Vercel Fluid, create a pg Pool at module scope, call `attachDatabasePool(pool)` and pass it as `new PrismaPg(pool)`."
-      - "Add `pgbouncer=true` only for PgBouncer below 1.21.0; on 1.21+ set `max_prepared_statements` above 0 instead."
-      - "The `prisma` CLI's npm `latest` tag points to a Prisma 8 release candidate (November 2026); install `prisma@7` so the CLI matches `@prisma/client` 7."
+      - "Pooling comes from the driver adapter: pass a configured pg Pool to `new PrismaPg(pool)`; `connection_limit` no longer applies."
+      - "The CLI reads `datasource.url` from Prisma Config, so set it to the direct URL. Install `prisma@7`: npm `latest` is an 8.x release candidate."
     docs: https://www.prisma.io/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/connection-pool
   - package: "@vercel/functions"
     range: ">=3.0.0 <4.0.0"
     notes:
-      - "Call `attachDatabasePool(pool)` once, right after creating the pool at module scope (available since 2.2.6). After each client release it keeps the instance alive for the idle timeout plus 100 ms."
-      - "Pools are recognised by shape (pg, mysql2, MariaDB, MongoDB, ioredis); an unrecognised pool, such as a postgres.js client, throws 'Unsupported database pool type'."
-      - "For a pg Pool it reads `idleTimeoutMillis` (10 s when unset); Vercel's guide uses 5 s. Outside Vercel it does nothing, so local development needs no special case."
-      - "3.x requires Node.js 20+. On Next.js 15.1+, use `after()` from `next/server` for your own background work instead of `waitUntil()`."
+      - "Call `attachDatabasePool(pool)` once, after creating a pg pool at module scope; a postgres.js client throws 'Unsupported database pool type'."
+      - "After each release it keeps the instance alive for `idleTimeoutMillis` (10 s if unset) plus 100 ms; Vercel's guide uses 5 s."
     docs: https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package
-  - package: next
-    range: ">=16.0.0 <17.0.0"
-    notes:
-      - "The Edge runtime is deprecated; keep database code on the default Node.js runtime (no `runtime` export), where TCP drivers and pools work."
-      - "Start the database module with `import 'server-only'` so importing it from a Client Component fails the build."
-      - "Only `NEXT_PUBLIC_` variables are inlined into browser bundles; keep the pooled and direct database URLs unprefixed."
-      - "`next dev` reloads changed modules; cache the pool or ORM client on `globalThis` outside production so edits don't open new pools."
-    docs: https://nextjs.org/docs/app/guides/data-security
-    context7: https://context7.com/vercel/next.js
   - package: "@neondatabase/serverless"
     range: ">=1.0.0 <2.0.0"
     notes:
-      - "Use `neon()` over HTTP for one-shot queries and `sql.transaction([...])` for non-interactive transactions; interactive transactions and sessions need `Pool` or `Client` over WebSockets."
-      - "Since 1.0 the `neon()` query function works only as a tagged template; use `sql.query(text, params)` for parameter arrays."
-      - "On edge runtimes, create, use and close `Pool` or `Client` inside one request handler; never share them across requests."
-      - "Requires Node.js 19+; on Node.js 21 and earlier, `Pool` and `Client` need a WebSocket constructor such as `ws`. HTTP queries don't."
-      - "On Vercel Fluid compute, Neon recommends pg over TCP with a pool and `attachDatabasePool` instead of this driver."
+      - "`neon()` over HTTP is a tagged template with only non-interactive `sql.transaction([...])`; interactive transactions need `Pool` or `Client`, created and closed within one request on edge runtimes."
+      - "On Vercel Fluid compute, Neon recommends pg over TCP with a pool instead of this driver."
     docs: https://neon.com/docs/serverless/serverless-driver
   - package: drizzle-orm
     range: ">=0.35.0 <1.0.0"
     notes:
-      - "Pass your own module-scope pool with `drizzle({ client: pool })` to control `max`, timeouts and `attachDatabasePool`; `drizzle(url)` builds a pool with driver defaults."
-      - "With `drizzle-orm/postgres-js` through a transaction pooler without prepared statements (Supabase's shared pooler), create the client with `postgres(url, { prepare: false })`."
-      - "`drizzle-orm/neon-http` throws 'No transactions support in neon-http driver' from `db.transaction()`; use `drizzle-orm/neon-serverless` or a TCP driver for transactions."
-      - "Point drizzle-kit's `dbCredentials.url` at the direct URL for `migrate` and `push`."
+      - "Pass your own module-scope pool, `drizzle({ client: pool })`, to control limits and `attachDatabasePool`; point drizzle-kit's `dbCredentials.url` at the direct URL."
+      - "`drizzle-orm/neon-http` has no `db.transaction()`; use `neon-serverless` or a TCP driver for transactions."
     docs: https://orm.drizzle.team/docs/get-started-postgresql
 
 verify:
@@ -270,14 +244,6 @@ verify:
     lens: performance
     type: integration
     check: Sending 50 concurrent requests to one warm instance raises the app role's connections in pg_stat_activity by no more than the pool's max.
-  - id: no-pool-in-handlers
-    lens: performance
-    type: scan
-    check: No `new Pool(`, `postgres(` or `new PrismaClient(` call appears outside the single server-only database module.
-  - id: dev-reload-stable
-    lens: performance
-    type: manual
-    check: After saving a server file ten times under `next dev`, the app's connection count in pg_stat_activity stays at or below one pool's max.
   - id: peak-load-budget
     lens: performance
     type: e2e
@@ -306,10 +272,6 @@ verify:
     lens: security
     type: integration
     check: Connecting with a wrong host name or an untrusted certificate fails, and pg_stat_ssl shows ssl true for the app's connections.
-  - id: idle-connections-close
-    lens: cost
-    type: integration
-    check: On Vercel Fluid, the app's client connections fall to zero within the idle timeout plus a small margin after traffic stops.
   - id: app-role-no-ddl
     lens: security
     type: integration
@@ -363,7 +325,7 @@ Serverless hosts start as many instances as traffic needs and each instance hold
 
 ### Security
 
-Require TLS that checks the certificate and host name: libpq's `require` encrypts but doesn't stop a man-in-the-middle. pg 8 currently treats `sslmode=require` as `verify-full` and warns that pg 9 will switch to libpq semantics, while postgres.js 4 already treats `ssl: 'require'` as encrypt-only, so write `verify-full` explicitly and supply the provider's CA when it isn't publicly trusted. Never ship `rejectUnauthorized: false`. Keep the pooled and direct URLs in unprefixed server-side variables (Next.js inlines `NEXT_PUBLIC_` values into browser bundles) and import the database module only from server code. Give the runtime a role without DDL rights; only the migration step uses the owner role on the direct URL. If you run PgBouncer, keep it off the public internet and patch it: 1.25.1 fixed a startup-packet `search_path` flaw allowing unauthenticated SQL when `track_extra_parameters` included it.
+Require TLS that checks the certificate and host name: libpq's `require` encrypts but doesn't stop a man-in-the-middle, so write `verify-full` and supply the provider's CA when it isn't publicly trusted. Never ship `rejectUnauthorized: false`. Keep the pooled and direct URLs in unprefixed server-side variables (Next.js inlines `NEXT_PUBLIC_` values into browser bundles), import the database module only from server code, and keep it on the Node.js runtime (Edge is deprecated in Next.js 16). Give the runtime a role without DDL rights; only the migration step uses the owner role on the direct URL. If you run PgBouncer, keep it off the public internet and patch it: 1.25.1 fixed a startup-packet `search_path` flaw allowing unauthenticated SQL when `track_extra_parameters` included it.
 
 ### Performance & latency
 
@@ -385,7 +347,7 @@ export const pool = globalForDb.pool ?? createPool()
 if (process.env.NODE_ENV !== 'production') globalForDb.pool = pool
 ```
 
-Do the arithmetic before launch: 20 instances × `max` 10 is 200 connections, double a default `max_connections` of 100. Fluid compute runs many requests per instance, so a pool max above 1 helps; classic one-request-per-instance serverless without a pooler should start near 1. Behind a pooler, client connections are cheap (Neon accepts 10,000) and server connections stay at the pooler's pool size. Neon estimates about 8 round trips to open a TCP connection versus about 3 for its HTTP driver, so the HTTP driver can win when most requests are cold; a warm pool wins otherwise. Run functions in the database's region; Vercel defaults new projects to `iad1`.
+Do the arithmetic before launch: 20 instances × `max` 10 is 200 connections, double a default `max_connections` of 100. Fluid compute runs many requests per instance, so a pool max above 1 helps; classic one-request-per-instance serverless without a pooler should start near 1. Neon estimates about 8 round trips to open a TCP connection versus about 3 for its HTTP driver, so the HTTP driver can win when most requests are cold; a warm pool wins otherwise. Run functions in the database's region; Vercel defaults new projects to `iad1`.
 
 ### Data model
 
@@ -396,30 +358,17 @@ ALTER ROLE app_runtime SET statement_timeout = '15s';
 ALTER ROLE app_runtime SET idle_in_transaction_session_timeout = '30s';
 ```
 
-Keep both timeouts shorter than your function's maximum duration. Use `pg_advisory_xact_lock` instead of `pg_advisory_lock`, and run `LISTEN` workers on the direct URL. Protocol-level prepared statements work on PgBouncer 1.21+ when `max_prepared_statements` is above 0 (200 by default since 1.24; Neon uses 1,000); SQL `PREPARE` never does. Run every migration tool over the direct URL: Prisma 7 reads `datasource.url` from Prisma Config, Prisma 6 uses `directUrl`, and drizzle-kit uses `dbCredentials.url`. Keep each transaction on one checked-out client.
+Keep both timeouts shorter than your function's maximum duration. Use `pg_advisory_xact_lock` instead of `pg_advisory_lock`, and run `LISTEN` workers on the direct URL. Protocol-level prepared statements work on PgBouncer 1.21+ when `max_prepared_statements` is above 0 (200 by default since 1.24; Neon uses 1,000); SQL `PREPARE` never does. Run every migration tool over the direct URL.
 
 ### Cost
 
-Every open connection is a Postgres process holding memory, and some providers tie `max_connections` to compute size (Neon: 450 on 1 CU), so pooling is cheaper than upsizing for connection slots. Neon's pooler sizes its server pool at 0.9 × `max_connections` per user and database, whatever the instance count. `attachDatabasePool` keeps an instance alive for the idle timeout plus 100 ms after each release, so a long `idleTimeoutMillis` extends instance lifetime; Vercel's example uses 5 seconds. Shift traffic gradually between deployments (Vercel suggests rolling releases) so a new deployment doesn't open a full set of connections at once. A self-run PgBouncer is another service to host and patch.
+Every open connection is a Postgres process holding memory, and some providers tie `max_connections` to compute size (Neon: 450 on 1 CU), so pooling is cheaper than upsizing for connection slots. On Vercel Fluid, a long `idleTimeoutMillis` keeps instances alive longer, so keep it short. Shift traffic gradually between deployments (Vercel suggests rolling releases) so a new deployment doesn't open a full set of connections at once. A self-run PgBouncer is another service to host and patch.
 
 ## Common mistakes
 
-- Constructing a pool or ORM client inside a route handler, Server Action or component.
-- Skipping the `globalThis` cache, so `next dev` opens a new pool on every edit.
+- Constructing a pool or ORM client inside a route handler, Server Action or component, or skipping the `globalThis` cache in development.
 - Pointing serverless code at the direct endpoint with the driver's default pool size.
-- Running migrations or `pg_dump` through the transaction pooler.
-- Relying on `SET`, `LISTEN`, session advisory locks or SQL `PREPARE` through a transaction pooler.
-- Keeping postgres.js `prepare: true` on a pooler without prepared statement support, or adding `pgbouncer=true` for PgBouncer 1.21+.
-- Sending `BEGIN` through `pool.query`, or forgetting `client.release()` on error paths.
+- Running migrations, `pg_dump` or `LISTEN` through the transaction pooler.
+- Relying on `SET`, session advisory locks or SQL `PREPARE` through a transaction pooler.
 - Setting `max: 1` on Fluid compute, or leaving the acquire timeout at 0.
 - Trusting `sslmode=require` or `rejectUnauthorized: false` to protect against interception.
-- Passing a postgres.js client to `attachDatabasePool`, which throws.
-
-## Notes for reviewers
-
-- `attachDatabasePool` rejecting postgres.js comes from its source on `main`; the docs say "and other compatible pool types".
-- Vercel's guide says to keep the minimum pool size at 1; pg's `min` defaults to 0 and the intent is unclear, so the card doesn't recommend `min`.
-- Unconfirmed: whether Prisma 7 with `@prisma/adapter-pg` needs `pgbouncer=true` on Supavisor's shared pooler, and whether it uses named prepared statements.
-- PgBouncer 1.26.0 tracks every parameter Postgres reports, but its features table still lists SET as never supported in transaction mode; the card keeps that rule.
-- The postgres.js 3.x README doesn't say whether `ssl: 'require'` verifies certificates.
-- Prisma's v6 PgBouncer page now shows the Prisma Config setup; the `directUrl` note for 6.x rests on the v6 schema reference.

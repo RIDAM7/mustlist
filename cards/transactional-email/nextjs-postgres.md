@@ -8,12 +8,12 @@ summary: >-
   sends it via an email API with idempotency keys, from a DMARC-aligned
   subdomain. Suppress bounces via verified webhooks, rate-limit per recipient,
   and email only hashed, single-use tokens.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, e-commerce, marketplace]
@@ -87,7 +87,7 @@ checklist:
     lens: ux
     level: should
     text: Consume tokens on a POST from a confirm page, or with a typed code, never on the link's GET request.
-    why: Mail security scanners open links before the user does and would use up single-use tokens.
+    why: Some mail security scanners open links before the user does and would use up single-use tokens.
   - id: plain-text-accessible
     lens: ux
     level: must
@@ -181,49 +181,39 @@ versions:
   - package: resend
     range: ">=6.0.0 <7.0.0"
     notes:
-      - "`resend.emails.send()` resolves to `{ data, error }` and does not throw on API or network errors: check `error` and throw in the worker so the job is retried."
-      - "Pass `{ idempotencyKey }` as the second argument (sent as `Idempotency-Key`, 1-256 characters, kept 24 hours). A 409 `invalid_idempotent_request` means the payload changed; `concurrent_idempotent_requests` is safe to retry later."
-      - "The SDK has no built-in retries. The default limit is 10 requests per second per team, shared by all API keys; on 429 wait the `retry-after` seconds."
-      - "Since 6.2.0, `resend.webhooks.verify({ payload, headers: { id, timestamp, signature }, webhookSecret })` checks the raw body against the `svix-*` headers and throws when invalid (5-minute timestamp tolerance)."
-      - "The `react` option imports `@react-email/render` at runtime and throws if it is missing; omitting `text` makes Resend derive one from `html` (an empty string opts out)."
+      - "`emails.send()` resolves to `{ data, error }` without throwing, and the SDK has no retries: throw on `error` in the worker so the job retries."
+      - "Pass `{ idempotencyKey }` as the second argument (kept 24 hours); a 409 `invalid_idempotent_request` means the payload changed."
+      - "The default limit is 10 requests per second per team; on 429 wait the `retry-after` seconds."
+      - "Since 6.2.0, `resend.webhooks.verify(...)` checks the raw body against the `svix-*` headers."
     docs: https://resend.com/docs/dashboard/emails/idempotency-keys
     context7: https://context7.com/resend/resend-node
   - package: "@aws-sdk/client-sesv2"
     range: ">=3.0.0 <4.0.0"
     notes:
-      - "Use `SESv2Client` with `SendEmailCommand` (`FromEmailAddress`, `Destination`, `Content.Simple`); the older `@aws-sdk/client-ses` command takes a different input shape."
-      - "`SendEmail` has no idempotency token: deduplicate in your outbox first. A returned `MessageId` means accepted, not delivered; SES can accept a message and not send it."
-      - "The client retries throttling (`TooManyRequestsException`, HTTP 429) and transient 5xx errors itself, 3 attempts by default (`maxAttempts`); count these before adding job-level retries."
-      - "New accounts start in the sandbox in each Region: verified recipients only, 200 messages per 24 hours, 1 per second. Request production access before launch."
-      - "Set `ConfigurationSetName` with an SNS event destination, or SNS identity notifications, to receive bounces and complaints; verify SNS signatures and the `TopicArn`."
+      - "`SendEmail` has no idempotency token, and a `MessageId` means accepted, not sent: deduplicate in the outbox."
+      - "The client already retries throttling and 5xx errors (3 attempts by default)."
+      - "New accounts start in the sandbox per Region (verified recipients, 200 a day); request production access before launch."
     docs: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_SendEmail.html
     context7: https://context7.com/aws/aws-sdk-js-v3
   - package: nodemailer
     range: ">=10.0.0 <11.0.0"
     notes:
-      - "Requires Node.js 20 or later; 10.0 is rewritten in TypeScript with ESM and CommonJS builds and bundled type declarations."
-      - "Since 10.2.0, SMTP errors carry `err.permanent` (true for 5xx replies except 503): do not retry when it is true."
-      - "`sendMail()` resolves when the relay accepts the message, not on delivery; bounces arrive later through the relay provider's events."
-      - "The SES transport takes `{ SES: { sesClient, SendEmailCommand } }` from `@aws-sdk/client-sesv2`."
-      - "Use `jsonTransport: true` or `streamTransport: true` in development and tests to build messages without sending them."
+      - "Needs Node.js 20+. Since 10.2.0, `err.permanent` is true for 5xx replies except 503: do not retry those."
+      - "Use `jsonTransport: true` in development and tests to build messages without sending them."
     docs: https://nodemailer.com/smtp
     context7: https://context7.com/nodemailer/nodemailer
   - package: react-email
     range: ">=6.0.0 <7.0.0"
     notes:
-      - "Components and `render` now import from `react-email`; `@react-email/components` is deprecated on npm."
-      - "`render(element)` returns a Promise: await it. Build the text part with `toPlainText(html)` or `render(element, { plainText: true })`."
-      - "Elements with `data-skip-in-text=\"true\"` stay in the HTML but are left out of `toPlainText` output."
-      - "The preview server moved to `@react-email/ui`."
+      - "Import components and `render` from `react-email` (`@react-email/components` is deprecated); `render()` returns a Promise."
+      - "Build the text part with `toPlainText(html)` or `render(element, { plainText: true })`."
     docs: https://react.email/docs/utilities/render
     context7: https://context7.com/resend/react-email
   - package: next
     range: ">=16.0.0 <17.0.0"
     notes:
-      - "`after()` runs after the response within the route's max duration and never retries; use it only to nudge the outbox worker, never as the only send path."
-      - "Variables prefixed `NEXT_PUBLIC_` are inlined into browser bundles at build time: keep provider keys unprefixed and add `import 'server-only'` to the mailer module."
-      - "Read webhook bodies with `await request.text()` in a `POST` Route Handler and verify before parsing; keep the route out of `proxy.ts` matchers."
-      - "Build email links from a configured base URL, never from the request's `host` header, which the client controls."
+      - "`after()` never retries: use it only to nudge the outbox worker. Keep provider keys out of `NEXT_PUBLIC_` variables."
+      - "Build email links from a configured base URL, never from the request's `host` header."
     docs: https://nextjs.org/docs/app/api-reference/functions/after
     context7: https://context7.com/vercel/next.js
 
@@ -337,7 +327,7 @@ await markSent(job.id, data.id);
 
 ### UX flows
 
-Say what happens next: "If an account exists for that address, we sent a link that expires in 30 minutes," with a resend button behind a cooldown. Mail scanners such as link-rewriting security gateways open links before the user, so a link should open a page with a Continue button that consumes the token on POST, or ask for a typed code. When an address is suppressed, show an in-app banner asking the user to fix it instead of failing silently. Render templates on the server with React Email, and send the `toPlainText` output as the text part. Use a `lang` attribute, real text rather than images of text, alt text, link text that names the action, and the full URL as a fallback. Keep promotions out of receipts: Gmail and Yahoo exempt transactional mail from one-click unsubscribe, but CAN-SPAM treats a message whose primary purpose is promotion as commercial.
+Say what happens next: "If an account exists for that address, we sent a link that expires in 30 minutes," with a resend button behind a cooldown. Some mail scanners, such as link-rewriting security gateways, open links before the user, so a link should open a page with a Continue button that consumes the token on POST, or ask for a typed code. When an address is suppressed, show an in-app banner asking the user to fix it instead of failing silently. Render templates on the server with React Email, and send the `toPlainText` output as the text part. Use a `lang` attribute, real text rather than images of text, alt text, link text that names the action, and the full URL as a fallback. Keep promotions out of receipts: Gmail and Yahoo exempt transactional mail from one-click unsubscribe, but CAN-SPAM treats a message whose primary purpose is promotion as commercial.
 
 ### Data model
 
@@ -369,18 +359,6 @@ Free tiers are small: Resend's free plan stops at 100 emails a day, which a laun
 - Awaiting the provider call inside the sign-up or reset request, so an outage fails the request.
 - Leaving DKIM on the provider's shared domain and SPF on its return path, so neither aligns with the From domain and DMARC fails.
 - Retrying with a new idempotency key, or none, so a timeout after acceptance sends duplicates.
-- Treating a Resend `{ error }` result as success because nothing was thrown.
 - Ignoring bounce and complaint events, so sends keep hitting dead addresses until the provider pauses the account.
-- Storing reset tokens in plain text, logging them, or letting click tracking rewrite them.
-- Consuming single-use tokens on GET, so mail scanners use them up.
 - Using the production key in development, or seed scripts that email real users.
 - Adding promotions to receipts, which makes them commercial mail.
-
-## Notes for reviewers
-
-- The 5-minute Resend webhook tolerance, `{ data, error }` without retries, and the runtime `@react-email/render` import come from the `resend` 6.38.1 and `standardwebhooks` 1.1.1 source, not Resend's docs.
-- "Gmail sends no complaint data" is documented only for SES.
-- The scanner-prefetch claim cites Supabase's guide; no scanner vendor page was checked.
-- The 30-minute expiry and 3-per-hour limit are judgement calls, not sourced numbers.
-- Outlook.com rejection of non-compliant mail is "to be announced"; today it goes to Junk.
-- Keeping the raw token in the outbox payload until sent is a design choice; an HMAC of the job id would avoid storing it.

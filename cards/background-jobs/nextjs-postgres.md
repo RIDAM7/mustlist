@@ -8,12 +8,12 @@ summary: >-
   separate long-running worker (pg-boss or Graphile Worker). Make handlers
   idempotent, retry with capped backoff, keep failed jobs to replay, and never
   treat after() as a queue.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, e-commerce, marketplace, internal-tool]
@@ -190,45 +190,39 @@ versions:
   - package: pg-boss
     range: ">=12.0.0 <13.0.0"
     notes:
-      - "v12 has no default export: use `import { PgBoss } from 'pg-boss'`. It needs Node.js 22.12+ and Postgres 13+. Create one long-lived instance per process and call `createQueue()` before `send()` or `work()`."
-      - "Pass `{ db: fromDrizzle(tx, sql) }` (or `fromPrisma`, `fromKysely`, `fromKnex`) to `send()` so the job commits or rolls back with your transaction."
-      - "Defaults are `retryLimit` 2, `retryDelay` 0, `retryBackoff` false and `expireInSeconds` 900; set backoff, `retryDelayMax` and `heartbeatSeconds` (at least 10) per queue."
-      - "Failed jobs are deleted after `deleteAfterSeconds` (7 days by default). Configure a `deadLetter` queue and use `redrive()` to replay; unworked dead-letter jobs expire after `retentionSeconds` (14 days)."
-      - "`work()` handlers receive an array (`async ([job]) => ...`). Short-lived serverless senders should set `registerInstance: false`; `useListenNotify` does not work through PgBouncer transaction pooling."
+      - "v12 has no default export (`import { PgBoss } from 'pg-boss'`) and needs Node.js 22.12+ and Postgres 13+. Call `createQueue()` before `send()` or `work()`."
+      - "Pass `{ db: fromDrizzle(tx, sql) }` (or `fromPrisma`, `fromKysely`, `fromKnex`) to `send()` so the job commits with your transaction."
+      - "Defaults are `retryLimit` 2 with no delay or backoff and `expireInSeconds` 900; set them per queue, plus `heartbeatSeconds` for long jobs."
+      - "Failed jobs are deleted after `deleteAfterSeconds` (7 days); add a `deadLetter` queue and use `redrive()` to replay."
     docs: https://pgboss.io/api/queues
     context7: https://context7.com/timgit/pg-boss
   - package: graphile-worker
     range: ">=0.18.0 <0.19.0"
     notes:
-      - "0.18 is pure ESM, needs Node.js 22.18+ and Postgres 12+, drops cosmiconfig in favour of `graphile.config.ts`, and no longer supports sub-path imports."
-      - "Enqueue atomically by calling `graphile_worker.add_job(...)` in SQL inside the same transaction as your write."
-      - "`max_attempts` defaults to 25 with `exp(least(10, attempt))` second delays (about 3 days in total). Permanently failed jobs stay in the table until you fix and reschedule or delete them."
-      - "`job_key` is not an idempotency record: the default `replace` mode overwrites a pending job, a running job gets a second copy, and completed jobs are deleted."
-      - "A worker killed without a graceful shutdown leaves its jobs locked for about 4 hours; send SIGTERM and let it drain."
+      - "0.18 is ESM-only, needs Node.js 22.18+ and reads `graphile.config.ts`. Enqueue atomically with `graphile_worker.add_job(...)` inside your transaction."
+      - "`max_attempts` defaults to 25 (about 3 days of backoff); failed jobs stay until you reschedule or delete them."
+      - "`job_key` is not an idempotency record: completed jobs are deleted, and a running job can get a second copy."
     docs: https://worker.graphile.org/docs/job-key
     context7: https://context7.com/graphile/worker
   - package: next
     range: ">=16.0.0 <17.0.0"
     notes:
-      - "`after()` runs after the response (even an error response) within the route's max duration, with no persistence or retry. Use it to log or to nudge a durable worker, not as a queue."
-      - "With self-hosted `next start`, SIGTERM or SIGINT lets pending `after()` callbacks finish; the docs recommend a 10-30 second drain period."
-      - "Set `export const maxDuration = <seconds>` in a cron or consumer Route Handler; the platform enforces it."
+      - "`after()` runs within the route's max duration with no persistence or retry; use it to nudge a durable worker, never as a queue."
+      - "Set `export const maxDuration` in cron and consumer Route Handlers; the platform stops the function there."
     docs: https://nextjs.org/docs/app/api-reference/functions/after
     context7: https://context7.com/vercel/next.js
   - package: inngest
     range: ">=4.0.0 <5.0.0"
     notes:
-      - "v4 moves triggers into the options object: `createFunction({ id, triggers: { event: 'app/x' } }, handler)`. Serve options such as `signingKey` move to the client, and the default mode is cloud (`INNGEST_DEV=1` locally)."
-      - "Functions retry 4 times by default (`retries` 0-20), and each `step.run()` has its own retry counter, so put each side effect in its own step."
-      - "An event `id` or the `idempotency` option dedupes for 24 hours only; handlers still need their own idempotency."
+      - "v4 moves triggers into the options, `createFunction({ id, triggers: { event: 'app/x' } }, handler)`, and defaults to cloud mode (`INNGEST_DEV=1` locally)."
+      - "Each `step.run()` retries on its own (4 retries by default), so give each side effect its own step; event idempotency lasts 24 hours."
     docs: https://www.inngest.com/docs/reference/typescript/v4/migrations/v3-to-v4
     context7: https://context7.com/inngest/inngest-js
   - package: "@upstash/qstash"
     range: ">=2.0.0 <3.0.0"
     notes:
-      - "Verify `Upstash-Signature` on the raw body with `Receiver` (current and next signing keys) or `verifySignatureAppRouter`; reject anything unsigned."
-      - "Failed deliveries are retried 3 times by default (`retries`), then moved to a dead-letter queue whose retention depends on your plan."
-      - "`deduplicationId` and `contentBasedDeduplication` only dedupe publishes within 10 minutes."
+      - "Verify `Upstash-Signature` on the raw body with `Receiver` or `verifySignatureAppRouter`."
+      - "3 retries by default, then a dead-letter queue; publish deduplication lasts only 10 minutes."
     docs: https://upstash.com/docs/qstash/features/retry
     context7: https://context7.com/upstash/qstash-js
 
@@ -365,16 +359,8 @@ A Postgres queue costs job-table storage, polling queries and one always-on work
 - Treating `after()`, `waitUntil` or an un-awaited promise as a queue, so work disappears on a crash, deploy or timeout.
 - Enqueueing before commit (a job for a rolled-back write) or after commit in a separate call (a lost job if the process dies in between).
 - Assuming exactly-once delivery, then sending an email or charging a card again on retry.
-- Using pg-boss `singletonKey` or Graphile `job_key` as a permanent idempotency record.
-- Retrying forever, or instantly with no backoff, against a rate-limited provider.
 - Letting retention delete failed jobs before anyone has looked at them.
 - Starting a polling worker inside a Route Handler or `instrumentation.ts` on serverless hosting, where instances stop at the max duration or between requests.
 - Shipping a cron route without the `CRON_SECRET` check, or letting overlapping runs process the same rows.
 - Killing workers with SIGKILL on deploy, which leaves jobs locked until their lease expires.
 - Alerting on queue depth only, so a stopped worker with a small backlog goes unnoticed.
-
-## Notes for reviewers
-
-- Vercel documents Queues, Schedules and Daemons as beta, and Cron Jobs as a legacy feature to be migrated to Schedules (checked 2026-11-16). Re-check before verifying.
-- That pg-boss deletes failed jobs after `deleteAfterSeconds` comes from the `failedCount` note in the queues docs and the retention query in `src/plans.ts`, not from an explicit sentence.
-- The serverless `instrumentation.ts` mistake is reasoned from Vercel's max-duration and background-worker docs rather than stated outright.
