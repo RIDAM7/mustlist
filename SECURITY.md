@@ -12,7 +12,8 @@ Mustlist cards are read by AI coding agents, so harmful card content is a securi
 
 Please report privately. Do not open a public issue.
 
-Use GitHub's private vulnerability reporting: the **Security** tab of this repository, then **Report a vulnerability**.
+- **Preferred:** GitHub's private vulnerability reporting. [Report a vulnerability](https://github.com/RIDAM7/mustlist/security/advisories/new) (the **Security** tab of this repository).
+- **Or email** ridam6419r@gmail.com with "Mustlist security" in the subject.
 
 Include the card id or URL, what is wrong, and why it is harmful. We aim to reply within 3 working days.
 

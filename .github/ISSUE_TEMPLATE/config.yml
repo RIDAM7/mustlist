@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/RIDAM7/mustlist/security/advisories/new
+    about: Harmful card content or a vulnerability. Report it privately, never in a public issue.
+  - name: Request a card
+    url: https://github.com/RIDAM7/mustlist/discussions/categories/requests
+    about: Ask for a missing card. Others can add "Need this too".
