@@ -12,6 +12,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Served at https://ridamagrawal.com/library. Every route and asset starts with /library.
   basePath: BASE_PATH,
+  // Avatars show GitHub photos only with live GitHub data (never for the sample's
+  // made-up handles). A flag, never the token itself.
+  env: {
+    NEXT_PUBLIC_MUSTLIST_AVATARS: process.env.MUSTLIST_GITHUB_TOKEN ? 'github' : '',
+  },
   cacheComponents: true,
   partialPrefetching: true,
   // Workspace packages ship TypeScript source.

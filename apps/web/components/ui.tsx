@@ -20,6 +20,20 @@ export function Pill({
 const TONE_CLASS = ['', '', 'av-2', 'av-3', 'av-4'] as const;
 
 /** Initial avatar in the person's colour. Links to the profile unless `link` is false. */
+/** Pixel size of each avatar size, for the GitHub image request. */
+const AVATAR_PX = { sm: 20, md: 32, lg: 40, xl: 80 } as const;
+
+/**
+ * GitHub photos are shown only with live GitHub data (set at build time in
+ * next.config.ts), so the sample data's made-up handles never show real people.
+ */
+const GITHUB_AVATARS = process.env.NEXT_PUBLIC_MUSTLIST_AVATARS === 'github';
+
+/** A person's GitHub photo, at twice the shown size for sharp screens. */
+export function githubAvatarUrl(handle: string, px: number): string {
+  return `https://avatars.githubusercontent.com/${encodeURIComponent(handle)}?s=${px * 2}`;
+}
+
 export function Avatar({
   handle,
   size,
@@ -33,16 +47,30 @@ export function Avatar({
 }) {
   const classes = cn('av', size && `av-${size}`, TONE_CLASS[toneFor(handle)], className);
   const initial = handle.charAt(0).toUpperCase();
+  // The photo covers the initial; if it fails to load, the initial shows through.
+  const photo = GITHUB_AVATARS ? (
+    // eslint-disable-next-line @next/next/no-img-element -- tiny remote avatar; no optimization needed
+    <img
+      className="av-img"
+      src={githubAvatarUrl(handle, size ? AVATAR_PX[size] : 24)}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+    />
+  ) : null;
   if (link) {
     return (
       <Link href={`/people/${handle}`} className={classes} aria-label={`@${handle}`}>
         {initial}
+        {photo}
       </Link>
     );
   }
   return (
     <span className={classes} aria-hidden="true">
       {initial}
+      {photo}
     </span>
   );
 }

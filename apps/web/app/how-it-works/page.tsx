@@ -119,13 +119,13 @@ export default function HowItWorksPage() {
       <h1 className="t-h1 max-md:text-[30px] max-md:leading-9">How it works</h1>
       <p className="t-lead muted mt-2 max-md:text-base">From a missing card to a verified one.</p>
 
-      {/* Desktop diagram */}
+      {/* Desktop diagram: the six steps share the width, no scrolling. */}
       <div
-        className="mt-12 hidden overflow-x-auto md:block"
+        className="mt-12 hidden pb-4 lg:block"
         role="img"
         aria-label="Request, then Proposal, Checks, Review and Accept give a Verified card. Changes requested go back to the proposal; old cards come back as re-checks."
       >
-        <div className="grid min-w-[980px] grid-cols-[repeat(5,minmax(0,160px)_36px)_minmax(0,160px)]">
+        <div className="grid grid-cols-[repeat(5,minmax(0,1fr)_28px)_minmax(0,1fr)]">
           {NODES.map((node, i) => (
             <div key={node.name} className="contents">
               <div
@@ -163,8 +163,8 @@ export default function HowItWorksPage() {
         </div>
       </div>
 
-      {/* Phone: vertical steps */}
-      <ol className="mt-8 flex flex-col md:hidden">
+      {/* Phone and tablet: vertical steps */}
+      <ol className="mt-8 flex flex-col lg:hidden">
         {NODES.map((node, i) => (
           <li key={node.name} className="grid grid-cols-[24px_minmax(0,1fr)] gap-3.5">
             <span className="flex flex-col items-center">
