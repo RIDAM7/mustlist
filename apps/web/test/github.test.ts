@@ -16,6 +16,9 @@ import {
   type GhPullRequest,
 } from '@/lib/community/github/map';
 import { verifySignature } from '@/lib/community/github/webhook';
+import { requestBody } from '@/lib/community/github/write';
+import { stackTitle } from '@mustlist/schema/site';
+import { topicName } from '@/lib/topics';
 import { toneFor } from '@/lib/community';
 
 const card = (overrides: Partial<CardJSON> = {}): CardJSON => ({
@@ -335,5 +338,23 @@ describe('people and webhooks', () => {
     expect(verifySignature(body, signature, 'other')).toBe(false);
     expect(verifySignature(`${body} `, signature, 'secret')).toBe(false);
     expect(verifySignature(body, null, 'secret')).toBe(false);
+  });
+});
+
+describe('requests posted from the site', () => {
+  it('read back like requests from the GitHub form', () => {
+    const body = requestBody({
+      topic: 'background-jobs',
+      stack: 'nextjs-postgres',
+      what: 'Nightly exports.',
+    });
+    expect(readFormField(body, 'Topic')).toBe('background-jobs');
+    expect(readFormField(body, 'Stack')).toBe('nextjs-postgres');
+    expect(readFormField(body, 'What are you building?')).toBe('Nightly exports.');
+    const title = `${topicName('background-jobs')} · ${stackTitle('nextjs-postgres')}`;
+    expect(parseRequestTitle(title)).toEqual({
+      topic: 'background-jobs',
+      stack: 'nextjs-postgres',
+    });
   });
 });

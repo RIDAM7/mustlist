@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { postComment } from '@/lib/community/actions';
 import { formatShortDate } from '@/lib/format';
 import { renderCommentMarkdown } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
@@ -43,18 +44,23 @@ export function Thread({
   heading = 'Discussion',
   emptyLine = 'Discussion',
   githubUrl,
+  request,
 }: {
   comments: ThreadComment[];
   heading?: string;
   emptyLine?: string;
-  /** Where replies go in GitHub mode: the discussion, or a new one. */
+  /** Where replies go in GitHub mode without sign-in: the discussion, or a new one. */
   githubUrl?: string;
+  /** The request (discussion) number: with sign-in, replies are posted there. */
+  request?: number;
 }) {
   const [comments, setComments] = useState(initial);
   const [order, setOrder] = useState<'oldest' | 'newest'>('oldest');
   const [expanded, setExpanded] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const { mode, viewer, requireViewer } = useViewer();
+  const { mode, viewer, canSignIn, requireViewer, promptSignIn } = useViewer();
+  // Signed-in writes to GitHub need a discussion to post to.
+  const live = mode === 'github' && canSignIn && request !== undefined;
   const toast = useToast();
   const boxRef = useRef<HTMLTextAreaElement>(null);
 
@@ -72,21 +78,49 @@ export function Thread({
   const hidden = collapse ? sorted.slice(2, -1) : [];
   const visible = collapse ? [...sorted.slice(0, 2), ...sorted.slice(-1)] : sorted;
 
+  /** Replace or remove an optimistic comment (top level or reply) by id. */
+  const patch = (id: string, next: ThreadComment | null) =>
+    setComments((list) =>
+      list.flatMap((c) => {
+        if (c.id === id) return next ? [next] : [];
+        const replies = c.replies.flatMap((r) => (r.id === id ? (next ? [next] : []) : [r]));
+        return [{ ...c, replies }];
+      }),
+    );
+
+  /** Show the comment at once; with sign-in, post it to GitHub and roll back on failure. */
+  const publish = (comment: ThreadComment, body: string, replyTo?: string) => {
+    if (!live || request === undefined) {
+      toast(replyTo ? 'Reply posted' : 'Comment posted');
+      return;
+    }
+    void postComment({ request, body, replyTo }).then((result) => {
+      if (result.ok) {
+        patch(comment.id, { ...comment, id: result.id, url: result.url, date: result.createdAt });
+        toast(replyTo ? 'Reply posted on GitHub' : 'Comment posted on GitHub');
+      } else {
+        patch(comment.id, null);
+        toast(result.error);
+        if (result.signIn) promptSignIn('reply');
+      }
+    });
+  };
+
   const addComment = (body: string) => {
     if (!viewer) return;
-    setComments((list) => [...list, newComment(viewer.handle, body)]);
-    toast('Comment posted');
+    const comment = newComment(viewer.handle, body);
+    setComments((list) => [...list, comment]);
+    publish(comment, body);
   };
 
   const addReply = (parent: string, body: string) => {
     if (!viewer) return;
+    const reply = newComment(viewer.handle, body);
     setComments((list) =>
-      list.map((c) =>
-        c.id === parent ? { ...c, replies: [...c.replies, newComment(viewer.handle, body)] } : c,
-      ),
+      list.map((c) => (c.id === parent ? { ...c, replies: [...c.replies, reply] } : c)),
     );
     setReplyTo(null);
-    toast('Reply posted');
+    publish(reply, body, parent);
   };
 
   return (
@@ -151,7 +185,7 @@ export function Thread({
         </div>
       )}
 
-      {mode === 'github' ? (
+      {mode === 'github' && !live ? (
         <GitHubReply href={githubUrl} />
       ) : (
         <>

@@ -9,6 +9,7 @@ import { roleLabel, type Comment, type Review } from '@/lib/community';
 import { formatShortDate, splitCode } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { VerdictPill } from './bits';
+import { submitReview } from '@/lib/community/actions';
 import { githubLinks } from '@/lib/community/links';
 import { useProposalState } from './proposal-state';
 
@@ -95,8 +96,9 @@ const KINDS: { id: Review['verdict']; label: string; hint: string }[] = [
 
 /** "Your review": comment, verdict, submit (board 28). */
 export function ReviewBox() {
-  const { mode, viewer, requireViewer } = useViewer();
+  const { mode, viewer, canSignIn, requireViewer, promptSignIn } = useViewer();
   const toast = useToast();
+  const [sending, setSending] = useState(false);
   const { proposal, status, localReviews, addReview, approve, requestChanges, now } =
     useProposalState();
   const [text, setText] = useState('');
@@ -115,7 +117,7 @@ export function ReviewBox() {
           </h2>
         </div>
         <div className="p-4">
-          {mode === 'github' && proposal.url ? (
+          {mode === 'github' && !canSignIn && proposal.url ? (
             <a
               href={githubLinks.reviewFiles(proposal.url)}
               target="_blank"
@@ -141,19 +143,34 @@ export function ReviewBox() {
 
   const needsText = kind !== 'approved' && !text.trim();
 
-  function submit() {
-    if (!viewer || needsText) return;
-    addReview({
-      id: `local-review-${localReviews.length + 1}`,
-      author: viewer.handle,
-      date: now,
-      verdict: kind,
-      body: text.trim(),
-    });
-    if (kind === 'approved') approve(viewer.handle);
+  function show(handle: string, body: string, id: string) {
+    addReview({ id, author: handle, date: now, verdict: kind, body });
+    if (kind === 'approved') approve(handle);
     if (kind === 'changes') requestChanges();
     setText('');
-    toast('Review submitted');
+  }
+
+  function submit() {
+    if (!viewer || needsText || sending) return;
+    const handle = viewer.handle;
+    const body = text.trim();
+    if (mode !== 'github') {
+      show(handle, body, `local-review-${localReviews.length + 1}`);
+      toast('Review submitted');
+      return;
+    }
+    // Signed in with GitHub: submit the pull request review as the viewer first.
+    setSending(true);
+    void submitReview({ proposal: proposal.number, kind, body }).then((result) => {
+      setSending(false);
+      if (result.ok) {
+        show(handle, body, result.url);
+        toast('Review submitted on GitHub');
+        return;
+      }
+      toast(result.error);
+      if (result.signIn) promptSignIn('review');
+    });
   }
 
   return (
@@ -212,11 +229,11 @@ export function ReviewBox() {
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
-            className={cn('btn btn-primary', needsText && 'btn-disabled')}
-            aria-disabled={needsText}
+            className={cn('btn btn-primary', (needsText || sending) && 'btn-disabled')}
+            aria-disabled={needsText || sending}
             onClick={submit}
           >
-            Submit review
+            {sending ? 'Submitting…' : 'Submit review'}
           </button>
         </div>
       </div>

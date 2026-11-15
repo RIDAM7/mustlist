@@ -59,7 +59,7 @@ export function TopBar() {
   const pathname = usePathname();
   const active = sectionOf(pathname);
   const openSearch = useSearch();
-  const { mode, viewer, signOut, requireViewer } = useViewer();
+  const { viewer, canSignIn, signOut, requireViewer } = useViewer();
   const mod = useModKey();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -123,7 +123,7 @@ export function TopBar() {
               </button>
             )}
           />
-        ) : mode === 'sample' ? (
+        ) : canSignIn ? (
           <button
             type="button"
             className="btn btn-secondary"
@@ -174,7 +174,7 @@ function MenuSheet({
   pathname: string;
   onClose: () => void;
 }) {
-  const { mode, viewer, signOut, requireViewer } = useViewer();
+  const { viewer, canSignIn, signOut, requireViewer } = useViewer();
   const panelRef = useRef<HTMLDivElement>(null);
   const first = useRef(pathname);
 
@@ -253,7 +253,7 @@ function MenuSheet({
                 Sign out
               </button>
             </>
-          ) : mode === 'sample' ? (
+          ) : canSignIn ? (
             <button
               type="button"
               className="btn btn-secondary btn-lg w-full"

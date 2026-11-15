@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useState } from 'react';
 import { stackTitle } from '@mustlist/schema/site';
+import { createRequest } from '@/lib/community/actions';
 import { githubLinks } from '@/lib/community/links';
 import { STACK_CHOICES, techName, topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
@@ -60,7 +61,8 @@ export function NewRequestForm({
   const params = useSearchParams();
   const router = useRouter();
   const toast = useToast();
-  const { mode, requireViewer } = useViewer();
+  const { mode, canSignIn, requireViewer, promptSignIn } = useViewer();
+  const [sending, setSending] = useState(false);
   const copy = useCopy();
   const topicId = useId();
   const whatId = useId();
@@ -112,7 +114,26 @@ export function NewRequestForm({
     );
 
   const submit = () => {
-    if (step < 3 || !what.trim() || what.length > WHAT_MAX) return;
+    if (step < 3 || !what.trim() || what.length > WHAT_MAX || sending) return;
+    if (mode === 'github' && canSignIn) {
+      // Signed in with GitHub: post the request as a discussion, as the viewer.
+      requireViewer('request a card', () => {
+        setSending(true);
+        void createRequest({ topic: topicSlug, stack: stackSlug, what: what.trim() }).then(
+          (result) => {
+            setSending(false);
+            if (result.ok) {
+              toast(`Request #${result.number} posted`);
+              router.push(`/requests/${result.number}`);
+              return;
+            }
+            toast(result.error);
+            if (result.signIn) promptSignIn('request a card');
+          },
+        );
+      });
+      return;
+    }
     if (mode === 'github') {
       // Requests are GitHub Discussions: copy the answers, then open the request form there.
       const title = `${topicName(topicSlug)} · ${stackTitle(stackSlug)}`;
@@ -308,9 +329,11 @@ ${what.trim()}
           <button
             type="submit"
             className="btn btn-primary"
-            aria-disabled={step < 3 || !what.trim() || what.length > WHAT_MAX}
+            aria-disabled={step < 3 || !what.trim() || what.length > WHAT_MAX || sending}
           >
-            {mode === 'github' ? (
+            {sending ? (
+              'Posting…'
+            ) : mode === 'github' && !canSignIn ? (
               <>
                 Submit on GitHub
                 <Icon name="external" size="sm" />

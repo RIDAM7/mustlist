@@ -41,11 +41,11 @@ export function ReviewQueue({
   people: Person[];
   now: string;
 }) {
-  const { mode, viewer, requireViewer } = useViewer();
+  const { mode, viewer, canSignIn, requireViewer } = useViewer();
   const [tab, setTab] = useState<Tab>('waiting');
   const [topic, setTopic] = useState('All');
 
-  if (!viewer && mode === 'github') {
+  if (!viewer && mode === 'github' && !canSignIn) {
     return (
       <>
         <h1 className="t-h2 text-[28px] leading-9">Review queue</h1>

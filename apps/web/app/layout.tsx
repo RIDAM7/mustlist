@@ -13,6 +13,7 @@ import { SAMPLE_VIEWER } from '@/lib/community/sample';
 import { getIndex } from '@/lib/data';
 import { SITE_NAME, SITE_PITCH, SITE_TAGLINE, SITE_URL } from '@/lib/site';
 import { THEME_SCRIPT } from '@/lib/theme';
+import { authEnabled } from '@/lib/auth';
 import './globals.css';
 
 const geistSans = Geist({ variable: '--font-geist', subsets: ['latin'] });
@@ -55,6 +56,8 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
             sampleViewer={
               community.source === 'sample' ? getPerson(community.people, SAMPLE_VIEWER) : undefined
             }
+            authEnabled={community.source === 'github' && authEnabled}
+            people={community.people}
           >
             <SearchProvider cards={getIndex()} community={searchIndex}>
               <TopBar />

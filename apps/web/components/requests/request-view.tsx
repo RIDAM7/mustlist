@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { getRequestViewerState, setNeed, setRequestState } from '@/lib/community/actions';
 import type { RenderedComment } from '@/lib/community/render';
 import { formatDate } from '@/lib/format';
 import { REQUEST_STATUS, type RequestStatus } from '@/lib/status';
@@ -34,22 +35,76 @@ export interface RequestViewProps {
 
 /** The ask and the debate (design boards 21 and 22). */
 export function RequestView(props: RequestViewProps) {
-  const { mode, viewer, requireViewer } = useViewer();
+  const { mode, viewer, canSignIn, requireViewer, promptSignIn } = useViewer();
   const toast = useToast();
   const [status, setStatus] = useState(props.status);
   const [needed, setNeeded] = useState(false);
+  /** Upvotes from everyone else (the viewer's own is `needed`). */
+  const [others, setOthers] = useState(props.need);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
-  const need = props.need + (needed ? 1 : 0);
+  const need = others + (needed ? 1 : 0);
   const pill = REQUEST_STATUS[status];
+  // Signed in with GitHub: writes go to the discussion as the viewer.
+  const live = mode === 'github' && canSignIn && Boolean(viewer);
+  const handle = viewer?.handle;
+
+  // The signed-in person's own "Need this too", and the live count.
+  useEffect(() => {
+    if (!live) return;
+    let current = true;
+    void getRequestViewerState(props.number).then((result) => {
+      if (!current || !result.ok) return;
+      setNeeded(result.upvoted);
+      setOthers(result.upvotes - (result.upvoted ? 1 : 0));
+    });
+    return () => {
+      current = false;
+    };
+  }, [live, handle, props.number]);
 
   const toggleNeed = () =>
     requireViewer(
       'add Need this too',
       () => {
-        setNeeded((value) => !value);
+        const on = !needed;
+        setNeeded(on);
+        if (!live) return;
+        void setNeed({ request: props.number, on }).then((result) => {
+          if (result.ok) {
+            setOthers(result.upvotes - (on ? 1 : 0));
+            return;
+          }
+          setNeeded(!on);
+          toast(result.error);
+          if (result.signIn) promptSignIn('add Need this too');
+        });
       },
       props.url,
     );
+
+  /** Maintainer actions: change the status at once, then confirm it on GitHub. */
+  const changeState = (
+    next: RequestStatus,
+    state: 'resolved' | 'duplicate' | 'closed' | 'open',
+    done: string,
+    duplicateOf?: number,
+  ) => {
+    const before = status;
+    setStatus(next);
+    if (!live) {
+      toast(done);
+      return;
+    }
+    void setRequestState({ request: props.number, state, duplicateOf }).then((result) => {
+      if (result.ok) {
+        toast(done);
+        return;
+      }
+      setStatus(before);
+      toast(result.error);
+      if (result.signIn) promptSignIn('manage requests');
+    });
+  };
 
   const needButton = (big: boolean) => (
     <button
@@ -114,10 +169,7 @@ export function RequestView(props: RequestViewProps) {
               {
                 label: 'Mark resolved',
                 icon: <Icon name="check" />,
-                onSelect: () => {
-                  setStatus('resolved');
-                  toast('Marked resolved');
-                },
+                onSelect: () => changeState('resolved', 'resolved', 'Marked resolved'),
               },
               {
                 label: 'Close as duplicate…',
@@ -129,10 +181,10 @@ export function RequestView(props: RequestViewProps) {
                 icon: <Icon name={status === 'closed' ? 'arrowUp' : 'x'} />,
                 danger: status !== 'closed',
                 separatorBefore: true,
-                onSelect: () => {
-                  setStatus(status === 'closed' ? 'open' : 'closed');
-                  toast(status === 'closed' ? 'Request reopened' : 'Request closed');
-                },
+                onSelect: () =>
+                  status === 'closed'
+                    ? changeState('open', 'open', 'Request reopened')
+                    : changeState('closed', 'closed', 'Request closed'),
               },
             ]}
             trigger={(triggerProps) => (
@@ -209,7 +261,7 @@ export function RequestView(props: RequestViewProps) {
             </Link>
           </div>
 
-          <Thread comments={props.comments} githubUrl={props.url} />
+          <Thread comments={props.comments} githubUrl={props.url} request={props.number} />
         </div>
 
         <aside className="hidden flex-[1_1_280px] flex-col gap-7 md:flex">
@@ -277,8 +329,7 @@ export function RequestView(props: RequestViewProps) {
         onClose={() => setDuplicateOpen(false)}
         onConfirm={(of) => {
           setDuplicateOpen(false);
-          setStatus('closed');
-          toast(`Closed as duplicate of #${of}`);
+          changeState('closed', 'duplicate', `Closed as duplicate of #${of}`, of);
         }}
       />
     </>

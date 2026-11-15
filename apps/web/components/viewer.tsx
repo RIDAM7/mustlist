@@ -4,13 +4,15 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useId,
   useMemo,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
-import type { CommunitySource, Person } from '@/lib/community';
+import { authClient, currentUser } from '@/lib/auth-client';
+import { getPerson, type CommunitySource, type Person } from '@/lib/community';
 import { Icon } from './icons';
 import { Modal } from './overlay';
 import { useToast } from './toast';
@@ -18,35 +20,44 @@ import { useToast } from './toast';
 /**
  * Who is signed in, and where writes go. Reading never needs an account.
  *
- * - GitHub mode (D-021 step A): there is no sign-in yet. Every write opens the
- *   matching page on GitHub (the `githubHref` of `requireViewer`).
+ * - GitHub mode with sign-in set up (D-021 step B): "Sign in with GitHub" (a
+ *   GitHub App). Writes go to GitHub as the signed-in person through Server
+ *   Actions (lib/community/actions.ts).
+ * - GitHub mode without sign-in: every write opens the matching page on GitHub
+ *   (the `githubHref` of `requireViewer`).
  * - Sample mode: the viewer is the sample maintainer, writes change local state,
  *   and "Sign out" / "Sign in" switch between the two states so both can be tried.
  *
- * Build step B replaces both with "Sign in with GitHub" (a GitHub App).
+ * The session is read in the browser, so every page stays prerendered.
  */
 
 interface ViewerContextValue {
   mode: CommunitySource;
   viewer: Person | null;
+  /** Whether this site offers sign-in (sample mode, or GitHub mode with the app set up). */
+  canSignIn: boolean;
   signIn: () => void;
   signOut: () => void;
   /**
    * Run `action` when signed in; otherwise ask to sign in ("Sign in to reply").
-   * In GitHub mode, open `githubHref` instead.
+   * In GitHub mode without sign-in, open `githubHref` instead.
    */
   requireViewer: (reason: string, action?: () => void, githubHref?: string) => void;
+  /** Ask to sign in again, for example after the GitHub token expired. */
+  promptSignIn: (reason: string) => void;
 }
 
 const ViewerContext = createContext<ViewerContextValue>({
   mode: 'sample',
   viewer: null,
+  canSignIn: false,
   signIn: () => {},
   signOut: () => {},
   requireViewer: () => {},
+  promptSignIn: () => {},
 });
 
-/** Opens a GitHub page in a new tab (write actions in GitHub mode). */
+/** Opens a GitHub page in a new tab (write actions in GitHub mode without sign-in). */
 export function openOnGitHub(href: string) {
   window.open(href, '_blank', 'noopener,noreferrer');
 }
@@ -84,42 +95,95 @@ function subscribe(listener: () => void) {
 export function ViewerProvider({
   mode,
   sampleViewer,
+  authEnabled = false,
+  people = [],
   children,
 }: {
   mode: CommunitySource;
   /** The signed-in person in sample mode. */
   sampleViewer?: Person;
+  /** GitHub mode: sign-in with the GitHub App is configured. */
+  authEnabled?: boolean;
+  /** Maintainers and reviewers, for the signed-in person's role. */
+  people?: Person[];
   children: ReactNode;
 }) {
   const signedOut = useSyncExternalStore(subscribe, readSignedOut, () => false);
+  const [githubHandle, setGithubHandle] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<{ reason: string; action?: () => void } | null>(null);
   const toast = useToast();
+  const github = mode === 'github' && authEnabled;
 
-  const viewer = mode === 'sample' && !signedOut ? (sampleViewer ?? null) : null;
+  useEffect(() => {
+    if (!github) return;
+    let live = true;
+    currentUser()
+      .then((user) => {
+        if (live) setGithubHandle(user?.handle ?? null);
+      })
+      .catch(() => {
+        // Signed out, or the auth endpoint is unreachable: reading still works.
+      });
+    return () => {
+      live = false;
+    };
+  }, [github]);
+
+  const viewer = github
+    ? githubHandle
+      ? getPerson(people, githubHandle)
+      : null
+    : mode === 'sample' && !signedOut
+      ? (sampleViewer ?? null)
+      : null;
 
   const signIn = useCallback(() => {
-    if (mode === 'sample') writeSignedOut(false);
-  }, [mode]);
+    if (github) {
+      void authClient().signIn.social({ provider: 'github', callbackURL: window.location.href });
+    } else if (mode === 'sample') {
+      writeSignedOut(false);
+    }
+  }, [github, mode]);
+
   const signOut = useCallback(() => {
+    if (github) {
+      void authClient()
+        .signOut()
+        .then(() => {
+          setGithubHandle(null);
+          toast('Signed out');
+        });
+      return;
+    }
     writeSignedOut(true);
     toast('Signed out');
-  }, [toast]);
+  }, [github, toast]);
 
   const requireViewer = useCallback(
     (reason: string, action?: () => void, githubHref?: string) => {
-      if (mode === 'github') {
+      if (mode === 'github' && !authEnabled) {
         if (githubHref) openOnGitHub(githubHref);
         return;
       }
       if (viewer) action?.();
       else setPrompt({ reason, action });
     },
-    [mode, viewer],
+    [mode, authEnabled, viewer],
   );
 
+  const promptSignIn = useCallback((reason: string) => setPrompt({ reason }), []);
+
   const value = useMemo(
-    () => ({ mode, viewer, signIn, signOut, requireViewer }),
-    [mode, viewer, signIn, signOut, requireViewer],
+    () => ({
+      mode,
+      viewer,
+      canSignIn: mode === 'sample' || authEnabled,
+      signIn,
+      signOut,
+      requireViewer,
+      promptSignIn,
+    }),
+    [mode, viewer, authEnabled, signIn, signOut, requireViewer, promptSignIn],
   );
 
   return (
@@ -128,11 +192,14 @@ export function ViewerProvider({
       <SignInDialog
         open={prompt !== null}
         reason={prompt?.reason ?? 'continue'}
+        github={github}
         onClose={() => setPrompt(null)}
         onSignIn={() => {
           const action = prompt?.action;
           setPrompt(null);
           signIn();
+          // GitHub sign-in leaves the page and comes back here; sample sign-in is instant.
+          if (github) return;
           toast(`Signed in as @${sampleViewer?.handle ?? 'you'}`);
           // The viewer updates on the next render; run the action after it.
           if (action) setTimeout(action, 0);
@@ -146,11 +213,14 @@ export function ViewerProvider({
 export function SignInDialog({
   open,
   reason,
+  github = false,
   onClose,
   onSignIn,
 }: {
   open: boolean;
   reason: string;
+  /** Real GitHub sign-in (not the sample). */
+  github?: boolean;
   onClose: () => void;
   onSignIn: () => void;
 }) {
@@ -176,13 +246,19 @@ export function SignInDialog({
         Sign in to {reason}
       </h2>
       <p className="t-sm muted mt-1.5">
-        GitHub is used only for your handle and avatar. Reading needs no account.
+        {github
+          ? 'Mustlist posts as you on GitHub, only in the Mustlist repository: replies, requests, Need this too and reviews. Reading needs no account.'
+          : 'GitHub is used only for your handle and avatar. Reading needs no account.'}
       </p>
       <button type="button" className="btn btn-primary btn-lg mt-6 w-full" onClick={onSignIn}>
         <Icon name="signIn" />
         Sign in with GitHub
       </button>
-      <p className="t-xs subtle mt-4 text-center">Read-only access to your public profile.</p>
+      <p className="t-xs subtle mt-4 text-center">
+        {github
+          ? 'No email, no other repositories. Revoke any time in GitHub → Settings → Applications.'
+          : 'Read-only access to your public profile.'}
+      </p>
     </Modal>
   );
 }
