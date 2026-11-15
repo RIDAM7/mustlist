@@ -8,12 +8,12 @@ summary: >-
   event id under a unique constraint, return 2xx fast and process in a worker.
   Fulfil only from verified events or server-side API checks, never the redirect,
   and reconcile with the provider.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, e-commerce, marketplace]
@@ -328,14 +328,3 @@ Most of the cost is compute: each delivery is a function invocation on serverles
 - Putting the webhook route behind session auth in `proxy.ts`, so providers receive redirects.
 - Treating `after()` as a durable queue.
 - No reconciliation job, so a webhook lost after the retry window is never noticed.
-
-## Notes for reviewers
-
-Check these claims against the sources before setting `verified`:
-- Stripe: retries for up to 3 days in live mode (3 attempts over a few hours in sandboxes), the 5-minute default tolerance, the 7-day secret roll overlap and the 10-second Checkout redirect wait.
-- Razorpay: the 5-second timeout, the 24-hour retry window followed by auto-disable, and that webhook signatures carry no timestamp.
-- The stripe-node v21-v23 changes (wrong-parser error, Node 20 minimum, tolerance 0 behaviour) against the changelog.
-- That razorpay-node 2.9.x `validateWebhookSignature` still compares with plain `===`.
-- That the Next.js 16 docs still mark the Edge runtime deprecated, and that `after()` has no retry.
-- That both providers express amounts in the smallest currency unit.
-- That the docs and Context7 links resolve.

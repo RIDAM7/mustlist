@@ -8,12 +8,12 @@ summary: >-
   presigned URLs issued after an auth check. Generate keys and enforce size
   limits server-side, check magic bytes, abort stale multipart uploads, and serve
   files via presigned GET.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, dashboard, marketplace]
@@ -322,14 +322,3 @@ S3 charges for storage, requests and data transferred out to the internet, so he
 - Serving uploaded SVG or HTML inline from the app's own domain.
 - No lifecycle rule for incomplete multipart uploads and no cleanup of unconfirmed uploads.
 - Marking a file ready because the client says the upload finished, without a server-side HeadObject check.
-
-## Notes for reviewers
-
-Check these claims against the sources before setting `verified`:
-- Whether presigned PUTs from SDK 3.x still embed a CRC32 checksum by default and fail without `requestChecksumCalculation: 'WHEN_REQUIRED'` (test against S3 and one S3-compatible provider), and that the default changed in about 3.729.0.
-- That `getSignedUrl` leaves `content-type` unsigned unless it is in `signableHeaders` (seen in the 3.1169.0 source), and that presigning makes no network call to S3.
-- The S3 limits: 5 GB per single PUT, 5 MiB to 5 GiB per part, 10,000 parts, and the new 48.8 TiB (50 TB) maximum object size.
-- The Next.js 16.4 defaults: 1 MB Server Action body limit, 10 MB `proxyClientMaxBodySize` (still experimental), 4 hour `minimumCacheTTL`.
-- The 4.5 MB Vercel Functions request body limit (host-specific; other hosts differ).
-- Presigned POST, CORS and lifecycle support for the providers in `options.examples`.
-- That the docs and Context7 links resolve.

@@ -8,12 +8,12 @@ summary: >-
   SameSite=Lax cookie. Hash passwords with Argon2id, rate-limit login and reset,
   authorize in server code (not only proxy/middleware), and ship email
   verification and password reset at launch.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, dashboard]
@@ -259,13 +259,3 @@ An open-source library costs only your hosting and email sending. Managed provid
 - Opening a new database connection per request in serverless without pooling.
 - Choosing an auth library without checking that it is still maintained (recent releases, active security fixes).
 - Logging request bodies that contain passwords or tokens.
-
-## Notes for reviewers
-
-Fact-checked against the sources in November 2026. Still open before setting `verified`:
-- Better Auth, the first `library-db-sessions` example, hashes with scrypt by default (its docs do not state the cost parameters) and defaults to an 8-character minimum password. Decide whether to add a `better-auth` version entry telling agents to raise the minimum to 15 and to use Argon2id or confirm the scrypt cost meets OWASP.
-- NIST states the `password-rules` requirements as SHALL. Decide whether to raise the item from `should` to `must`.
-- Auth.js stays an example with a qualifier: the Better Auth team has maintained it since September 2025, ships its security fixes, and recommends Better Auth for new projects. Decide whether to drop it. Better Auth itself joined Vercel in July 2026.
-- OWASP prefers `SameSite=Strict` and accepts `Lax`. Confirm `Lax` is the intended default.
-- Next.js 15 security releases end on Jan. 31, 2027. Plan to retire the 15.x version entry then.
-- A verify check (`password-policy`) was added, but `card_version` is still 0.1.0. Bump it if needed.

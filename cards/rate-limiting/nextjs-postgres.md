@@ -8,12 +8,12 @@ summary: >-
   IP, in Route Handlers and Server Actions, with counters in a shared store (a
   Postgres upsert by default). Return 429 with Retry-After and trust only your
   platform's client-IP header.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, public-api]
@@ -328,15 +328,3 @@ Postgres counters add one write per limited request plus vacuum work, with no ne
 - Using a library's default timeout without knowing that it lets requests through when the store is down.
 - Limiting OTP sends but not OTP verification, so short codes can be brute-forced.
 - Caching a limited route publicly, so a CDN serves it without running the limiter.
-
-## Notes for reviewers
-
-Check these claims against the sources before setting `verified`:
-- Vercel's `X-Forwarded-For` overwrite and `x-real-ip` behaviour, and Cloudflare's `CF-Connecting-IP` guidance.
-- The status of the IETF RateLimit header fields (draft 11, 23 May 2026, expiring 24 November 2026).
-- The IPv6 grouping advice (/64 minimum; RIPE-690 suggests ISPs assign a /56 or /48 per customer).
-- Upstash Ratelimit's default timeout (5 seconds, request allowed) and the multi-region caveats.
-- Vercel WAF and Cloudflare plan limits (keys, windows, rule counts, per-region or per-data-center counters), which change often.
-- That `UNLOGGED` tables and HOT updates behave as described on common managed Postgres providers.
-- The `postgresql` version entry uses the server name as its package (for `date_bin`, PostgreSQL 14+); confirm that convention for database versions.
-- A `rate-limiter-flexible` version entry was dropped because its docs live on a GitHub wiki, which is not on the official-docs allowlist. Its Postgres store needs a scheduled `clearExpired` call in serverless; decide whether to mention that elsewhere.

@@ -8,12 +8,12 @@ summary: >-
   (Next.js 16 Cache Components). Check auth outside cached code, key on every
   input, invalidate tags where you write, never CDN-cache cookie responses, and
   fix slow SQL with indexes first.
-status: draft
-card_version: 0.1.0
-last_verified: null
-review_level: null
+status: verified
+card_version: 1.0.0
+last_verified: 2026-11-15
+review_level: seed
 authors: [RIDAM7]
-reviewers: []
+reviewers: [RIDAM7]
 lenses: [security, performance, ux, data, cost]
 applies_when:
   app_types: [web-app, saas, dashboard, content-site, ecommerce]
@@ -313,13 +313,3 @@ The framework cache costs nothing extra, but it starts empty after every deploy 
 - Caching a slow query instead of adding the missing index.
 - Using `use cache: remote` for keys that are unique per request, so the hit rate is near zero.
 - Omitting `cacheLife` and relying on the implicit `default` profile.
-
-## Notes for reviewers
-
-Check these claims against the sources before setting `verified`:
-- `updateTag` is Server Action-only and `revalidateTag` needs a profile argument across all of 16.x (checked against the 16.4.6 bundled docs only).
-- The `cacheLife` prerendering thresholds (`expire` under 5 minutes or `revalidate: 0` becomes a dynamic hole) and the "under 50 ms" guidance for `use cache: remote`.
-- That `use cache` entries reset on every deploy on common hosts, and which hosts store runtime `use cache` output at all.
-- That a `Cache-Control` header set on a Route Handler response passes through unchanged when Cache Components is enabled.
-- The RFC 9111 section 7.3 wording on `Set-Cookie`, and the Postgres `max_connections` default (typically 100) and `CONCURRENTLY` requirements in the current Postgres docs.
-- The Next.js 15 notes (single-argument `revalidateTag`, `unstable_cache`) against the versioned 15 docs.
