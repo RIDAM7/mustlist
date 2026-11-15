@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CardHeader } from '@/components/card/card-header';
-import { Avatar, AvatarStack, EmptyState, SampleBadge, handleList } from '@/components/ui';
+import { Avatar, AvatarStack, EmptyState, handleList, Pill, SampleBadge } from '@/components/ui';
 import { nextMajors } from '@/lib/card';
 import {
   approvalCount,
@@ -102,7 +102,7 @@ export default async function CardHistoryPage({ params }: PageProps<'/[topic]/[s
                         <span className="mono text-[13px] font-semibold">v{p.toVersion}</span>
                       )}
                       <span className="t-sm subtle">{formatDate(p.updated)}</span>
-                      <span className="pill p-solid">Accepted</span>
+                      <Pill pill="p-solid" label="Accepted" />
                     </div>
                     <Link
                       href={`/proposals/${p.number}`}
@@ -173,8 +173,8 @@ export default async function CardHistoryPage({ params }: PageProps<'/[topic]/[s
                           #{p.number} · @{p.author} · {approvalCount(p)} of 2 approvals
                         </div>
                       </div>
-                      <span className={cn('meta max-md:hidden', checks.glyph)}>{checks.label}</span>
-                      <span className={cn('pill', pill.pill)}>{pill.label}</span>
+                      <span className={cn('meta max-md:hidden', checks.tone)}>{checks.label}</span>
+                      <Pill pill={pill.pill} label={pill.label} />
                     </Link>
                   );
                 })}

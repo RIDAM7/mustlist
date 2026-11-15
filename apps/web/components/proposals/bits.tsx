@@ -1,20 +1,21 @@
 import type { Review, TimelineStep } from '@/lib/community';
-import { CHECKS_STATE, type ChecksState } from '@/lib/status';
+import { CHECKS_STATE, REVIEW_VERDICT, type ChecksState } from '@/lib/status';
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/icons';
+import { Mark } from '@/components/mark';
+import { Pill } from '../ui';
 
-/** Check-state glyph: circle-check, circle-x or spinner, coloured by state. */
+/** Check-state mark at 16 px: the same tick, cross or spinner as the Checks pills. */
 export function ChecksGlyph({ state, className }: { state: ChecksState; className?: string }) {
-  if (state === 'passing') return <Icon name="checkCircle" size="sm" className={className} />;
-  if (state === 'failing') return <Icon name="xCircle" size="sm" className={className} />;
-  return <Icon name="spinner" size="sm" className={cn('spin', className)} />;
+  if (state === 'passing') return <Mark size={16} name="tick" className={className} />;
+  if (state === 'failing') return <Mark size={16} name="cross" className={className} />;
+  return <Mark size={16} name="spinner" className={cn('run', className)} />;
 }
 
 /** "✓ Passing" in the row colour of its state. */
 export function ChecksMeta({ state, className }: { state: ChecksState; className?: string }) {
   const info = CHECKS_STATE[state];
   return (
-    <span className={cn('meta', info.glyph, className)}>
+    <span className={cn('meta', info.tone, className)}>
       <ChecksGlyph state={state} />
       {info.label}
     </span>
@@ -31,15 +32,8 @@ export function ApprovalBar({ count, className }: { count: number; className?: s
   );
 }
 
-const VERDICT: Record<Review['verdict'], { pill: string; label: string }> = {
-  approved: { pill: 'p-success', label: 'Approved' },
-  comment: { pill: 'p-outline', label: 'Comment' },
-  changes: { pill: 'p-warning', label: 'Changes requested' },
-};
-
 export function VerdictPill({ verdict }: { verdict: Review['verdict'] }) {
-  const info = VERDICT[verdict];
-  return <span className={cn('pill', info.pill)}>{info.label}</span>;
+  return <Pill {...REVIEW_VERDICT[verdict]} />;
 }
 
 /** The status timeline (board 25): dots joined by a thin line. */

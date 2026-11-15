@@ -4,13 +4,13 @@ import { Icon } from '@/components/icons';
 import { LiveTimeline } from '@/components/proposals/overview-parts';
 import { proposalFromParam } from '@/components/proposals/server';
 import { AcceptBox, PhoneStatusBoxes, ProposalSide } from '@/components/proposals/side-panels';
+import { Pill } from '@/components/ui';
 import { getRequest } from '@/lib/community';
 import { loadCommunity } from '@/lib/community/load';
 import { getCard } from '@/lib/data';
 import { formatDate } from '@/lib/format';
 import { renderCommentMarkdown } from '@/lib/markdown';
 import { CARD_STATUS, REQUEST_STATUS } from '@/lib/status';
-import { cn } from '@/lib/utils';
 
 // Blocking: unknown proposal ids get a real 404 (see the layout).
 export const instant = false;
@@ -54,9 +54,7 @@ export default async function ProposalOverview({ params }: PageProps<'/proposals
                       Request · {accepted ? 'resolved by this proposal' : 'resolves on accept'}
                     </div>
                   </div>
-                  <span className={cn('pill', REQUEST_STATUS[request.status].pill)}>
-                    {REQUEST_STATUS[request.status].label}
-                  </span>
+                  <Pill {...REQUEST_STATUS[request.status]} />
                 </Link>
               )}
               {card && (
@@ -71,9 +69,7 @@ export default async function ProposalOverview({ params }: PageProps<'/proposals
                         : 'not verified yet'}
                     </div>
                   </div>
-                  <span className={cn('pill', CARD_STATUS[card.status].pill)}>
-                    {CARD_STATUS[card.status].label}
-                  </span>
+                  <Pill {...CARD_STATUS[card.status]} />
                 </Link>
               )}
             </div>

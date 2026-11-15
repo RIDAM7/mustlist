@@ -603,7 +603,7 @@
     pointer-events: none;
   }
 
-  /* pills: status only; the dot is drawn by ::before */
+  /* pills: status only; the mark is an inline SVG, <svg class="mark">, before the label */
   .pill {
     display: inline-flex;
     align-items: center;
@@ -618,14 +618,6 @@
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;
-  }
-  .pill::before {
-    content: '';
-    flex: none;
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: currentColor;
   }
   .p-success {
     background: var(--success-soft);
@@ -652,15 +644,11 @@
     color: var(--neutral);
     border-color: color-mix(in srgb, var(--neutral) 22%, transparent);
   }
-  /* Draft: no fill, hollow dot */
+  /* Draft, Comment, Not in library: no fill */
   .p-outline {
     background: transparent;
     color: var(--fg-muted);
     border-color: var(--border-strong);
-  }
-  .p-outline::before {
-    background: transparent;
-    box-shadow: inset 0 0 0 1.5px currentColor;
   }
   /* Accepted: the one solid pill */
   .p-solid {
@@ -676,32 +664,49 @@
     background: var(--danger);
     color: var(--danger-fg);
   }
-  /* Running: accent, open-ring dot that turns when motion is allowed */
+  /* Running: accent; its spinner mark turns when motion is allowed */
   .p-running {
     background: var(--accent-soft);
     color: var(--accent-text);
     border-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }
-  .p-running::before {
-    width: 8px;
-    height: 8px;
-    background: transparent;
-    border: 1.5px solid currentColor;
-    border-right-color: transparent;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .p-running::before {
-      animation: ml-spin 0.9s linear infinite;
-    }
-  }
-  /* Recommended (options compared): outline, no dot */
+  /* Recommended (options compared): outline, star mark */
   .p-rec {
     background: transparent;
     color: var(--accent-text);
     border-color: var(--accent);
   }
-  .p-rec::before {
-    display: none;
+  /* Text-only pill inside a banner that already carries the alert */
+  .p-bare {
+    height: auto;
+    padding: 0;
+    background: transparent;
+    border-color: transparent;
+  }
+
+  /* status mark: 12 × 12 in pills, 16 × 16 in check rows and the Accept panel */
+  .mark {
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .pill > .mark {
+    width: 12px;
+    height: 12px;
+    margin: 0 -1px 0 -2px; /* reads 7 | mark 12 | 5 | label | 9 */
+  }
+  .p-bare > .mark {
+    margin-left: 0;
+  }
+  /* Running is the only mark that moves */
+  @media (prefers-reduced-motion: no-preference) {
+    .p-running > .mark,
+    .mark.run {
+      animation: ml-spin 0.9s linear infinite;
+    }
   }
   .dot {
     display: inline-block;

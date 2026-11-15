@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import type { CardJSON } from '@mustlist/schema/types';
 import { pad2, splitCode } from '@/lib/format';
+import { LABEL_PILL } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { Icon } from '../icons';
-import { CodeText } from '../ui';
+import { CodeText, Pill } from '../ui';
 
 /**
  * Decisions to make + Options. Picking an answer that favours an option marks
@@ -106,9 +107,7 @@ export function DecisionsAndOptions({
                     >
                       <span className="flex flex-col py-3">
                         <span className="text-[15px] font-semibold">{option.name}</span>
-                        {fits && (
-                          <span className="pill p-accent mt-1.5 self-start">Fits your answers</span>
-                        )}
+                        {fits && <Pill {...LABEL_PILL.fits} className="mt-1.5 self-start" />}
                       </span>
                       <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="subtle" />
                     </button>
@@ -125,8 +124,8 @@ export function DecisionsAndOptions({
                         <div
                           className={cn('mb-2.5 flex flex-wrap gap-1.5', !rec && 'max-md:hidden')}
                         >
-                          {rec && <span className="pill p-rec">Recommended</span>}
-                          {fits && <span className="pill p-accent">Fits your answers</span>}
+                          {rec && <Pill pill="p-rec" label="Recommended" />}
+                          {fits && <Pill pill="p-accent" label="Fits your answers" />}
                         </div>
                       )}
                       <h3

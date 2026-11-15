@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { RelativeTime } from '../client-bits';
 import { Icon } from '../icons';
 import { SelectMenu } from '../overlay';
-import { EmptyState, KeyHint, NeedBox } from '../ui';
+import { EmptyState, KeyHint, NeedBox, Pill } from '../ui';
 
 export interface RequestRow {
   number: number;
@@ -191,6 +191,7 @@ export function RequestsList({
                   <div className="min-w-0 flex-1">
                     <div className="row-title text-[15px]">{r.title}</div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <Pill {...pill} className="sm:hidden" />
                       <span className="tag tag-topic">{r.topicLabel}</span>
                       <span className="tag">{r.stackLabel}</span>
                       <span className="t-sm subtle ml-1 max-md:hidden">
@@ -203,8 +204,8 @@ export function RequestsList({
                     {r.replies}
                   </span>
                   <span className="meta w-24 max-md:hidden">{r.proposals}</span>
-                  <span className="flex justify-end md:w-[108px]">
-                    <span className={cn('pill', pill.pill)}>{pill.label}</span>
+                  <span className="flex justify-end max-sm:hidden md:w-[108px]">
+                    <Pill {...pill} />
                   </span>
                 </Link>
               );

@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import { SelectMenu } from './overlay';
+import { Pill } from './ui';
 
 export interface StackCardRow {
   id: string;
@@ -67,7 +67,7 @@ export function StackCards({ rows }: { rows: StackCardRow[] }) {
               {row.title}
             </span>
             <span className="w-[150px] max-md:w-auto">
-              <span className={cn('pill', row.pill)}>{row.status}</span>
+              <Pill pill={row.pill} label={row.status} />
             </span>
             <span className="mono subtle w-20 max-md:hidden">v{row.version}</span>
             <span className="t-sm subtle w-[120px] text-right max-md:hidden">

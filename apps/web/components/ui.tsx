@@ -1,20 +1,34 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { toneFor } from '@/lib/community';
+import { LABEL_PILL, markForLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { Icon, type IconName } from './icons';
+import { Mark, type MarkName } from './mark';
 
-/** Status pill: one colour per state. */
+/**
+ * Status pill: one colour and one mark per state. The mark comes from `glyph`,
+ * or from the label when the data carries only the label (see lib/status.ts);
+ * `glyph={null}` shows no mark.
+ */
 export function Pill({
   pill,
   label,
+  glyph,
   className,
 }: {
   pill: string;
   label: string;
+  glyph?: MarkName | null;
   className?: string;
 }) {
-  return <span className={cn('pill', pill, className)}>{label}</span>;
+  const mark = glyph === undefined ? markForLabel(label) : glyph;
+  return (
+    <span className={cn('pill', pill, className)}>
+      {mark && <Mark name={mark} />}
+      {label}
+    </span>
+  );
 }
 
 const TONE_CLASS = ['', '', 'av-2', 'av-3', 'av-4'] as const;
@@ -223,7 +237,7 @@ export function SampleBadge() {
 export function SampleBanner({ className }: { className?: string }) {
   return (
     <div className={cn('banner banner-dash', className)} role="note">
-      <span className="pill p-neutral">Sample data</span>
+      <Pill {...LABEL_PILL.sampleData} />
       <span className="muted flex-1">
         Shown until a GitHub token is set. Nothing here is saved.
       </span>
@@ -245,7 +259,7 @@ export function SourceBanner({
   if (!unavailable) return null;
   return (
     <div className={cn('banner banner-warn', className)} role="status">
-      <span className="pill p-warning bg-transparent px-0">GitHub unavailable</span>
+      <Pill {...LABEL_PILL.githubUnavailable} />
       <span className="flex-1 text-fg">
         Requests and proposals could not be loaded. Retrying soon.
       </span>

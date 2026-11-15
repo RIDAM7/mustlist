@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Icon } from '../icons';
 import { useCopy, useToast } from '../toast';
 import { openOnGitHub, useViewer } from '../viewer';
+import { Pill } from '../ui';
 
 export interface DuplicateSource {
   kind: 'card' | 'request';
@@ -363,7 +364,7 @@ ${what.trim()}
                     <span className="t-xs subtle">
                       {d.kind === 'card' ? 'Card' : `Request #${d.number}`}
                     </span>
-                    <span className={cn('pill', d.pill)}>{d.status}</span>
+                    <Pill pill={d.pill} label={d.status} />
                   </div>
                   <div className="mt-1 text-sm font-medium">{d.title}</div>
                   <div className="t-xs subtle mt-0.5">{d.meta}</div>

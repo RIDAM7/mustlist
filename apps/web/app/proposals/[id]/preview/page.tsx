@@ -4,13 +4,12 @@ import { CardBody } from '@/components/card/card-body';
 import { PreviewSwitch } from '@/components/proposals/preview-switch';
 import { proposalFromParam } from '@/components/proposals/server';
 import { loadCommunity } from '@/lib/community/load';
-import { AvatarStack, Crumbs, EmptyState, handleList } from '@/components/ui';
+import { AvatarStack, Crumbs, EmptyState, handleList, Pill } from '@/components/ui';
 import type { Proposal } from '@/lib/community';
 import { getCard } from '@/lib/data';
 import { formatDate } from '@/lib/format';
 import { CARD_STATUS } from '@/lib/status';
 import { stackName, techName, topicName } from '@/lib/topics';
-import { cn } from '@/lib/utils';
 
 function PreviewHeader({
   card,
@@ -38,7 +37,7 @@ function PreviewHeader({
         {card.title}
       </h2>
       <div className="t-sm mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className={cn('pill', pill)}>{status}</span>
+        <Pill pill={pill} label={status} />
         <span className="muted">{verified}</span>
         {people.length > 0 && (
           <span className="inline-flex items-center gap-2">

@@ -2,7 +2,8 @@
 
 import { Icon } from '@/components/icons';
 import { useToast } from '@/components/toast';
-import { Avatar } from '@/components/ui';
+import { Mark } from '@/components/mark';
+import { Avatar, Pill } from '@/components/ui';
 import { useViewer } from '@/components/viewer';
 import { formatDateTime } from '@/lib/format';
 import { getPerson, roleLabel } from '@/lib/community';
@@ -23,7 +24,7 @@ export function ChecksBox() {
         <h2 id="ck-h" className="t-sm strong">
           Checks
         </h2>
-        <span className={cn('pill', overall.pill)}>{overall.label}</span>
+        <Pill pill={overall.pill} label={overall.label} />
       </div>
       <ul className="py-1">
         {proposal.checkRuns.map((run) => (
@@ -31,10 +32,7 @@ export function ChecksBox() {
             key={run.name}
             className="grid grid-cols-[16px_minmax(0,1fr)_auto] items-start gap-2.5 px-4 py-2.5"
           >
-            <ChecksGlyph
-              state={run.state}
-              className={cn('mt-[3px] h-4 w-4', CHECKS_STATE[run.state].glyph)}
-            />
+            <ChecksGlyph state={run.state} className={cn('mt-0.5', CHECKS_STATE[run.state].tone)} />
             <div>
               <div className="t-sm font-medium">{run.name}</div>
               <div className="t-xs subtle">{run.note}</div>
@@ -100,7 +98,11 @@ export function ApprovalsBox() {
 function Requirement({ done, children }: { done: boolean; children: React.ReactNode }) {
   return (
     <li className={cn('flex items-center gap-2', !done && 'subtle')}>
-      {done ? <Icon name="check" size="sm" className="ok" /> : <span className="dot mx-[3px]" />}
+      <Mark
+        size={16}
+        name={done ? 'tick' : 'ring'}
+        className={done ? 'ok' : 'text-border-strong'}
+      />
       {children}
     </li>
   );
@@ -246,8 +248,8 @@ export function PhoneStatusBoxes() {
       <div className="grid grid-cols-2 gap-2">
         <div className="box p-3">
           <div className="label">Checks</div>
-          <div className={cn('t-sm mt-1.5 flex items-center gap-1.5 font-medium', checks.glyph)}>
-            <ChecksGlyph state={proposal.checks} className="h-4 w-4" />
+          <div className={cn('t-sm mt-1.5 flex items-center gap-1.5 font-medium', checks.tone)}>
+            <ChecksGlyph state={proposal.checks} />
             {checks.label}
           </div>
           <div className="t-xs subtle mt-0.5">Format · Safety · Links</div>

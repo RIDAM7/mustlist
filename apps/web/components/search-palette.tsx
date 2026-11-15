@@ -23,7 +23,7 @@ import { topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
 import { Icon, type IconName } from './icons';
 import { Modal } from './overlay';
-import { Kbd, KeyHint, SampleBadge } from './ui';
+import { Kbd, KeyHint, Pill, SampleBadge } from './ui';
 
 /** One search across cards, requests and proposals (Ctrl/Cmd+K everywhere). */
 
@@ -331,7 +331,7 @@ function SearchPalette({
                     <span className="truncate font-medium">{result.title}</span>
                     <span className="t-xs subtle truncate">{result.meta}</span>
                   </span>
-                  <span className={cn('pill', result.pill)}>{result.status}</span>
+                  <Pill pill={result.pill} label={result.status} />
                   {on && <Kbd>Enter</Kbd>}
                 </a>
               );

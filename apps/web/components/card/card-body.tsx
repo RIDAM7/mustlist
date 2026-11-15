@@ -14,6 +14,7 @@ import { DecisionsAndOptions } from './decisions-options';
 import { LensSections, type LensBlock } from './lens-sections';
 import { Toc, TocSelect } from './toc';
 import { VersionNotes } from './version-notes';
+import { Pill } from '../ui';
 
 const LENS_SHORT: Record<Lens, string> = {
   security: 'Security',
@@ -235,7 +236,7 @@ export function CardBody({
                       <span className="text-sm font-medium">{topicName(topic)}</span>
                       <span className="flex items-center justify-between gap-2">
                         <span className="t-sm subtle">{stackTitle(relatedStack)}</span>
-                        <span className="pill p-outline">Not in library</span>
+                        <Pill pill="p-outline" label="Not in library" />
                       </span>
                     </div>
                   );
@@ -246,7 +247,7 @@ export function CardBody({
                     <span className="text-sm font-medium">{topicName(entry.topic)}</span>
                     <span className="flex items-center justify-between gap-2">
                       <span className="t-sm subtle">{stackTitle(relatedStack)}</span>
-                      <span className={cn('pill', status.pill)}>{status.label}</span>
+                      <Pill pill={status.pill} label={status.label} />
                     </span>
                   </Link>
                 );

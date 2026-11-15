@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { Section } from './checks';
 import { type Draft, optionIds, usedLenses } from './draft';
 import { LENS_SHORT } from './sections';
+import { Pill } from '../ui';
 
 /** The current section, rendered with the card page's classes. */
 
@@ -162,7 +163,7 @@ export function SectionPreview({ section, draft }: { section: Section; draft: Dr
                   <div>
                     {rec && (
                       <div className="mb-2.5">
-                        <span className="pill p-rec">Recommended</span>
+                        <Pill pill="p-rec" label="Recommended" />
                       </div>
                     )}
                     <h3 className="text-[15px] font-semibold leading-[22px]">

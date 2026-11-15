@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { REVIEW_VERDICT } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { Icon, type IconName } from './icons';
-import { EmptyState } from './ui';
+import { EmptyState, Pill } from './ui';
 
 interface FeedItem {
   key: string;
@@ -39,11 +40,7 @@ interface ReviewItem {
   when: string;
 }
 
-const VERDICT = {
-  approved: { label: 'Approved', pill: 'p-success' },
-  changes: { label: 'Changes requested', pill: 'p-warning' },
-  comment: { label: 'Comment', pill: 'p-outline' },
-} as const;
+const VERDICT = REVIEW_VERDICT;
 
 type Tab = 'activity' | 'cards' | 'proposals' | 'reviews';
 
@@ -113,11 +110,7 @@ export function ProfileTabs({
                       </Link>
                     </>,
                     <>
-                      {item.pill && (
-                        <span className={cn('pill max-md:hidden', item.pill.pill)}>
-                          {item.pill.label}
-                        </span>
-                      )}
+                      {item.pill && <Pill {...item.pill} className="max-md:hidden" />}
                       <span className="t-xs subtle w-12 text-right">{item.when}</span>
                     </>,
                   ),
@@ -136,7 +129,7 @@ export function ProfileTabs({
                     <Link href={`/${card.id}`} className="font-medium hover:underline">
                       {card.title} <span className="subtle font-normal">· {card.stack}</span>
                     </Link>,
-                    <span className={cn('pill', card.pill)}>{card.status}</span>,
+                    <Pill pill={card.pill} label={card.status} />,
                   ),
                 )}
               </ol>
@@ -153,7 +146,7 @@ export function ProfileTabs({
                     <Link href={`/proposals/${p.number}`} className="font-medium hover:underline">
                       #{p.number} {p.title}
                     </Link>,
-                    <span className={cn('pill', p.pill)}>{p.status}</span>,
+                    <Pill pill={p.pill} label={p.status} />,
                   ),
                 )}
               </ol>
@@ -178,9 +171,7 @@ export function ProfileTabs({
                       #{r.number} {r.title}
                     </Link>,
                     <>
-                      <span className={cn('pill max-md:hidden', VERDICT[r.verdict].pill)}>
-                        {VERDICT[r.verdict].label}
-                      </span>
+                      <Pill {...VERDICT[r.verdict]} className="max-md:hidden" />
                       <span className="t-xs subtle w-12 text-right">{r.when}</span>
                     </>,
                   ),
@@ -199,7 +190,7 @@ export function ProfileTabs({
                   <div className="t-sm font-medium">{card.title}</div>
                   <div className="mt-1 flex justify-between">
                     <span className="t-xs subtle">{card.stack}</span>
-                    <span className={cn('pill', card.pill)}>{card.status}</span>
+                    <Pill pill={card.pill} label={card.status} />
                   </div>
                 </Link>
               ))}

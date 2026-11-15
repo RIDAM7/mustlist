@@ -10,6 +10,7 @@ import { formatShortDate, plural } from '@/lib/format';
 import { PROPOSAL_STATUS, PROPOSAL_TYPE } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { useProposalState } from './proposal-state';
+import { Pill } from '../ui';
 
 export type ProposalTab = 'overview' | 'preview' | 'changes' | 'reviews';
 
@@ -108,7 +109,7 @@ export function ProposalHeader({ cardLink }: { cardLink?: CardLink }) {
               {proposal.title}
             </h1>
             <div className="t-sm mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 md:mt-3.5">
-              <span className={cn('pill', statusInfo.pill)}>{statusInfo.label}</span>
+              <Pill pill={statusInfo.pill} label={statusInfo.label} />
               <span className="tag">{PROPOSAL_TYPE[proposal.type]}</span>
               <span className="muted inline-flex basis-full items-center gap-1.5 md:basis-auto">
                 <Avatar handle={proposal.author} size="sm" />

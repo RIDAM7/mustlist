@@ -18,6 +18,7 @@ import { PROPOSAL_STATUS, PROPOSAL_TYPE, isOpenProposal } from '@/lib/status';
 import { topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
 import { ChecksMeta } from './bits';
+import { Pill } from '../ui';
 
 type Tab = 'waiting' | 'reviewed' | 'open';
 
@@ -176,7 +177,7 @@ export function ReviewQueue({
                 <ChecksMeta state={p.checks} className="hidden w-[88px] md:inline-flex" />
                 <span className="t-sm hidden w-14 md:block">{approvalCount(p)} of 2</span>
                 <span className="hidden w-[140px] justify-end md:flex">
-                  <span className={cn('pill', status.pill)}>{status.label}</span>
+                  <Pill pill={status.pill} label={status.label} />
                 </span>
               </Link>
             );

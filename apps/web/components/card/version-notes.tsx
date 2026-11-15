@@ -3,8 +3,10 @@
 import { useSyncExternalStore } from 'react';
 import semver from 'semver';
 import { hostOf } from '@/lib/format';
+import { LABEL_PILL } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { Icon } from '../icons';
+import { Pill } from '../ui';
 
 export interface VersionEntry {
   package: string;
@@ -106,9 +108,10 @@ export function VersionNotes({ entries }: { entries: VersionEntry[] }) {
                 <span className="mono text-[13px] font-semibold">{entry.package}</span>
                 <span className="mono text-[13px] text-fg-muted">{entry.range}</span>
                 {on && (
-                  <span className="pill p-accent">
-                    Matches {entry.package} {mine[entry.package]}
-                  </span>
+                  <Pill
+                    {...LABEL_PILL.matches}
+                    label={`Matches ${entry.package} ${mine[entry.package]}`}
+                  />
                 )}
               </div>
               <ul className="flex flex-col gap-1.5">

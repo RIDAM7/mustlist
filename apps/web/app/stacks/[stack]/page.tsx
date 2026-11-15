@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { stackTitle } from '@mustlist/schema/site';
 import { JsonLd } from '@/components/json-ld';
 import { StackCards } from '@/components/stack-cards';
-import { Crumbs, NeedBox, SampleBadge } from '@/components/ui';
+import { Crumbs, NeedBox, Pill, SampleBadge } from '@/components/ui';
 import { requestProposalMeta, requestsForStack } from '@/lib/community';
 import { loadCommunity } from '@/lib/community/load';
 import { getIndex, getStacks, splitId } from '@/lib/data';
@@ -13,7 +13,6 @@ import { breadcrumbJsonLd, collectionJsonLd, isIndexable, robotsFor } from '@/li
 import { LIBRARY_URL, SITE_NAME } from '@/lib/site';
 import { CARD_STATUS, REQUEST_STATUS } from '@/lib/status';
 import { topicName } from '@/lib/topics';
-import { cn } from '@/lib/utils';
 
 export function generateStaticParams() {
   return getStacks().map(({ stack }) => ({ stack }));
@@ -112,7 +111,7 @@ export default async function StackPage({ params }: PageProps<'/stacks/[stack]'>
                     <div className="row-title">{r.title}</div>
                     <div className="t-sm subtle">{requestProposalMeta(community, r)}</div>
                   </div>
-                  <span className={cn('pill', status.pill)}>{status.label}</span>
+                  <Pill pill={status.pill} label={status.label} />
                 </Link>
               );
             })}

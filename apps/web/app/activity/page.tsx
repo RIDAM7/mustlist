@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/icons';
-import { Avatar, EmptyState, SampleBadge } from '@/components/ui';
+import { Avatar, EmptyState, Pill, SampleBadge } from '@/components/ui';
 import { describeTarget, getProposal, listActivity, type ActivityEvent } from '@/lib/community';
 import { loadCommunity } from '@/lib/community/load';
 import { getIndex } from '@/lib/data';
 import { compactAge, formatDate } from '@/lib/format';
 import { LIBRARY_URL, SITE_NAME } from '@/lib/site';
 import { CARD_STATUS, PROPOSAL_STATUS } from '@/lib/status';
-import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: { absolute: `Activity | ${SITE_NAME}` },
@@ -62,7 +61,7 @@ export default async function ActivityPage() {
                       v{card.card_version} · {formatDate(card.last_verified ?? '')}
                     </div>
                   </div>
-                  <span className={cn('pill', status.pill)}>{status.label}</span>
+                  <Pill pill={status.pill} label={status.label} />
                 </Link>
               );
             })}
@@ -99,9 +98,7 @@ export default async function ActivityPage() {
                   </Link>
                 </div>
                 <span className="flex items-center gap-3">
-                  {pill && (
-                    <span className={cn('pill max-md:hidden', pill.pill)}>{pill.label}</span>
-                  )}
+                  {pill && <Pill pill={pill.pill} label={pill.label} className="max-md:hidden" />}
                   <span className="t-xs subtle w-10 text-right">{compactAge(event.date, now)}</span>
                 </span>
               </li>

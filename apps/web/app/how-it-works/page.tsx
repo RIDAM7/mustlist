@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Icon, type IconName } from '@/components/icons';
 import { LIBRARY_URL, SITE_NAME } from '@/lib/site';
 import { cn } from '@/lib/utils';
+import { Pill } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: { absolute: `How it works | ${SITE_NAME}` },
@@ -147,7 +148,7 @@ export default function HowItWorksPage() {
                 <span className="text-base font-semibold">{node.name}</span>
                 <span className="t-sm muted">{node.line}</span>
                 <span className="mt-auto">
-                  <span className={cn('pill', node.pill)}>{node.label}</span>
+                  <Pill pill={node.pill} label={node.label} />
                 </span>
               </div>
               {i < NODES.length - 1 && (
@@ -185,7 +186,7 @@ export default function HowItWorksPage() {
             <div className="pb-5">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{node.name}</span>
-                <span className={cn('pill', node.pill)}>{node.label}</span>
+                <Pill pill={node.pill} label={node.label} />
               </div>
               <p className="t-sm muted mt-0.5">{node.line}</p>
             </div>
@@ -225,9 +226,7 @@ export default function HowItWorksPage() {
                 <dt className="t-sm subtle">{row.label}</dt>
                 <dd className="m-0 flex flex-wrap gap-1.5">
                   {row.pills.map(([pill, label]) => (
-                    <span key={label} className={cn('pill', pill)}>
-                      {label}
-                    </span>
+                    <Pill key={label} pill={pill} label={label} />
                   ))}
                 </dd>
               </div>

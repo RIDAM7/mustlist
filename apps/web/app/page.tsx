@@ -7,7 +7,7 @@ import { AGENT_BRANDS, BrandMark } from '@/components/brand-marks';
 import { HomeSearch } from '@/components/home-search';
 import { Icon } from '@/components/icons';
 import { JsonLd } from '@/components/json-ld';
-import { EmptyState, NeedBox, SampleBadge } from '@/components/ui';
+import { EmptyState, NeedBox, Pill, SampleBadge } from '@/components/ui';
 import { shortTitle, topicStatus } from '@/lib/card';
 import { countComments, mostWanted, requestProposalMeta } from '@/lib/community';
 import { loadCommunity } from '@/lib/community/load';
@@ -17,7 +17,6 @@ import { breadcrumbJsonLd, collectionJsonLd } from '@/lib/seo';
 import { LIBRARY_URL, SITE_NAME, SITE_PITCH, SITE_TAGLINE } from '@/lib/site';
 import { CARD_STATUS, REQUEST_STATUS } from '@/lib/status';
 import { topicLine, topicName } from '@/lib/topics';
-import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: { absolute: `${SITE_NAME}: ${SITE_TAGLINE}` },
@@ -109,7 +108,7 @@ export default async function LibraryHome() {
               <Link key={topic.slug} href={`/${topic.slug}`} className="tile">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="t-h3">{topic.name}</h3>
-                  <span className={cn('pill', topic.status.pill)}>{topic.status.label}</span>
+                  <Pill pill={topic.status.pill} label={topic.status.label} />
                 </div>
                 <p className="t-sm muted">{topic.line}</p>
                 <div className="mt-auto flex flex-wrap gap-1.5 pt-1.5">
@@ -156,7 +155,7 @@ export default async function LibraryHome() {
                     {card.last_verified && (
                       <span className="meta shrink-0">{formatShortDate(card.last_verified)}</span>
                     )}
-                    <span className={cn('pill', status.pill)}>{status.label}</span>
+                    <Pill pill={status.pill} label={status.label} />
                   </Link>
                 );
               })}
@@ -200,7 +199,7 @@ export default async function LibraryHome() {
                         <div className="row-title">{request.title}</div>
                         <div className="meta">{meta}</div>
                       </div>
-                      <span className={cn('pill max-sm:hidden', status.pill)}>{status.label}</span>
+                      <Pill pill={status.pill} label={status.label} className="max-sm:hidden" />
                     </Link>
                   );
                 })}

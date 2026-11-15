@@ -16,6 +16,7 @@ import {
 import { topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
 import { ApprovalBar, ChecksMeta } from './bits';
+import { Pill } from '../ui';
 
 type Tab = 'Open' | 'In review' | 'Approved' | 'Accepted' | 'All';
 const TABS: Tab[] = ['Open', 'In review', 'Approved', 'Accepted', 'All'];
@@ -176,7 +177,7 @@ export function ProposalsList({
                     <RelativeTime date={p.updated} now={now} />
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-3 md:hidden">
-                    <span className={cn('pill', status.pill)}>{status.label}</span>
+                    <Pill pill={status.pill} label={status.label} />
                     <ChecksMeta state={p.checks} />
                     <span className="t-sm subtle">{approvals} of 2</span>
                   </div>
@@ -187,7 +188,7 @@ export function ProposalsList({
                   <ApprovalBar count={approvals} className="w-14" />
                 </span>
                 <span className="hidden w-[150px] justify-end md:flex">
-                  <span className={cn('pill', status.pill)}>{status.label}</span>
+                  <Pill pill={status.pill} label={status.label} />
                 </span>
               </Link>
             );

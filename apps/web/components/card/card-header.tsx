@@ -9,7 +9,7 @@ import { formatDate } from '@/lib/format';
 import { CARD_STATUS } from '@/lib/status';
 import { techName, topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
-import { AvatarStack, Crumbs, handleList } from '../ui';
+import { AvatarStack, Crumbs, handleList, Pill } from '../ui';
 import { CardActions } from './card-actions';
 
 export type CardTab = 'card' | 'history' | 'discussion';
@@ -54,7 +54,7 @@ export async function CardHeader({ card, tab }: { card: CardJSON; tab: CardTab }
             {card.title}
           </h1>
           <div className="t-sm mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 md:mt-4 md:gap-x-4">
-            <span className={cn('pill', status.pill)}>{status.label}</span>
+            <Pill pill={status.pill} label={status.label} />
             <span className="muted">
               {card.last_verified ? (
                 <>
@@ -93,13 +93,13 @@ export async function CardHeader({ card, tab }: { card: CardJSON; tab: CardTab }
 
       {card.status === 'stale' && (
         <div className="banner banner-warn mt-6" role="status">
-          <span className="pill p-warning bg-transparent px-0">Being re-checked</span>
+          <Pill {...CARD_STATUS.stale} pill="p-warning p-bare" />
           <span className="flex-1 text-fg">Still served to agents. A re-check is in review.</span>
         </div>
       )}
       {(card.status === 'draft' || card.status === 'proposed') && (
         <div className="banner banner-dash mt-6" role="status">
-          <span className="pill p-neutral">{status.label}</span>
+          <Pill {...status} />
           <span className="muted flex-1">Not reviewed. Not served to agents.</span>
         </div>
       )}

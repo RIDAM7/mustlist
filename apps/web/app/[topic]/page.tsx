@@ -9,10 +9,11 @@ import { JsonLd } from '@/components/json-ld';
 import {
   AvatarStack,
   Crumbs,
+  handleList,
   NeedBox,
+  Pill,
   SampleBadge,
   SectionHead,
-  handleList,
 } from '@/components/ui';
 import { approvalCount, countComments, proposalsForTopic, requestsForTopic } from '@/lib/community';
 import { loadCommunity } from '@/lib/community/load';
@@ -124,7 +125,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 max-md:flex-row max-md:items-center">
-                      <span className={cn('pill', status.pill)}>{status.label}</span>
+                      <Pill pill={status.pill} label={status.label} />
                       <span className="t-xs subtle">
                         v{card.card_version}
                         {card.last_verified && ` · ${formatDate(card.last_verified)}`}
@@ -167,7 +168,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
                         <Icon name="comment" size="sm" />
                         {countComments(r.comments)}
                       </span>
-                      <span className={cn('pill', status.pill)}>{status.label}</span>
+                      <Pill pill={status.pill} label={status.label} />
                     </Link>
                   );
                 })}
@@ -201,7 +202,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
                           #{p.number} · @{p.author} · {approvalCount(p)} of 2 approvals
                         </div>
                       </div>
-                      <span className={cn('meta max-md:hidden', checks.glyph)}>
+                      <span className={cn('meta max-md:hidden', checks.tone)}>
                         <Icon
                           name={
                             p.checks === 'passing'
@@ -215,7 +216,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
                         />
                         {checks.label}
                       </span>
-                      <span className={cn('pill', status.pill)}>{status.label}</span>
+                      <Pill pill={status.pill} label={status.label} />
                     </Link>
                   );
                 })}
@@ -237,7 +238,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
                     className="flex justify-between gap-2 hover:text-accent-text"
                   >
                     <span>{stackTitle(card.id.split('/')[1] ?? '')}</span>
-                    <span className={cn('pill', status.pill)}>{status.label}</span>
+                    <Pill pill={status.pill} label={status.label} />
                   </Link>
                 );
               })}
@@ -248,9 +249,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
                   className="flex justify-between gap-2 hover:text-accent-text"
                 >
                   <span>{stackName(r.stack)}</span>
-                  <span className={cn('pill', REQUEST_STATUS[r.status].pill)}>
-                    {REQUEST_STATUS[r.status].label}
-                  </span>
+                  <Pill {...REQUEST_STATUS[r.status]} />
                 </Link>
               ))}
             </div>
