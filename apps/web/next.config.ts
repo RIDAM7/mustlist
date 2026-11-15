@@ -24,14 +24,6 @@ const nextConfig: NextConfig = {
   // Pages are prerendered, but unknown URLs still read dist/ at request time.
   outputFileTracingRoot: path.join(import.meta.dirname, '..', '..'),
   outputFileTracingIncludes: { '/*': ['../../dist/**/*'] },
-  turbopack: {
-    rules: {
-      '*.css': {
-        loaders: ['@tailwindcss/turbopack'],
-        as: '*.css',
-      },
-    },
-  },
   async rewrites() {
     // /library/<topic>/<stack>.md -> the raw-markdown route handler.
     // basePath is added to both sides automatically. `\\.` is a literal dot.
