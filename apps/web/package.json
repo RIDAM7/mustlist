@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@mustlist/build": "workspace:*",
+    "@mustlist/mcp": "workspace:*",
     "@mustlist/schema": "workspace:*",
     "cn": "^0.5.2",
     "next": "16.4.6",

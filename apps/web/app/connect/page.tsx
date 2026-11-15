@@ -7,7 +7,7 @@ import { LIBRARY_URL, SITE_NAME } from '@/lib/site';
 export const metadata: Metadata = {
   title: { absolute: `Connect your agent | ${SITE_NAME}` },
   description:
-    'Give your coding agent Mustlist cards: llms.txt, a JSON API, or one card as Markdown.',
+    'Give your coding agent Mustlist cards: a remote MCP server, an AGENTS.md index, llms.txt, a JSON API, or one card as Markdown.',
   alternates: { canonical: `${LIBRARY_URL}/connect` },
 };
 

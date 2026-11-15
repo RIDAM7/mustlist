@@ -4,7 +4,7 @@ Reviewed "build it properly" cards for AI coding agents: the must-haves you forg
 
 > Context7 tells your agent the current API. Mustlist tells it what to build, and what you forgot to ask for.
 
-**Status: early development, not launched.** The card format, validator, build and website work locally. The first card (`auth/nextjs-postgres`) is a draft and has not been reviewed yet.
+**Live at [ridamagrawal.com/library](https://ridamagrawal.com/library)** with 5 verified cards: auth, rate limiting, payment webhooks, file uploads and caching, for Next.js with Postgres or S3. More are coming; [request one](https://github.com/RIDAM7/mustlist/discussions/categories/requests).
 
 ## What is a card?
 
@@ -23,16 +23,34 @@ Cards are Markdown with YAML frontmatter, and Git is the source of truth. Card t
 
 Only **verified** cards are meant for agents. Drafts are visible on the website but marked `noindex`.
 
-## How you will use it
+## Use it with your agent
 
-These work locally today and will be served at `https://ridamagrawal.com/library`:
+**Remote MCP server** (read-only, no account, no key): `https://ridamagrawal.com/library/mcp`
 
-- **Website**: one page per card, plus topic and stack pages.
-- **Raw markdown** for agents: add `.md` to any card URL.
-- **JSON API**: `/library/api/index`, `/library/api/cards/<topic>/<stack>`, `/library/api/topics`, `/library/api/stacks`.
-- **`/library/llms.txt`** and **`/library/sitemap.xml`**: verified cards only.
+```bash
+claude mcp add --transport http mustlist https://ridamagrawal.com/library/mcp
+```
 
-**Planned**: a remote MCP server and an `npx mustlist` command (a local MCP server, plus `init` to add a card index to your `AGENTS.md`).
+Setup for Cursor, VS Code, Codex CLI and Windsurf is on the [Connect page](https://ridamagrawal.com/library/connect?tab=mcp). The server has four tools:
+
+| Tool              | What it returns                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| `get_checklist`   | What to build for a feature (must / should), the decisions to ask you, and the options         |
+| `get_card`        | The card for your stack: option, checklist, lens notes, version notes for your packages, tests |
+| `search_cards`    | Cards by feature, topic or stack                                                               |
+| `report_feedback` | A pre-filled GitHub issue link for you to review; it posts nothing itself                      |
+
+Every result starts with a note that card text is reference material and your instructions win. Only verified cards are returned unless the agent asks for unreviewed ones.
+
+**The `mustlist` command** ([packages/cli](packages/cli/README.md)):
+
+```bash
+npx mustlist init     # add an index of the cards that fit your stack to AGENTS.md
+npx mustlist mcp      # the same MCP server over stdio, offline
+npx mustlist search "stripe webhooks"
+```
+
+**Without MCP**: add `.md` to any card URL for raw markdown, read [`/library/llms.txt`](https://ridamagrawal.com/library/llms.txt), or use the JSON API (`/library/api/index`, `/library/api/cards/<topic>/<stack>`, `/library/api/topics`, `/library/api/stacks`).
 
 ## Quick start
 
@@ -62,7 +80,8 @@ templates/card.md          template used by pnpm new-card
 packages/schema            card schema (zod), types, constants and parser
 packages/validator         validation rules and the pnpm validate CLI
 packages/build             cards -> dist/ (JSON, markdown, search index, llms.txt)
-packages/mcp, packages/cli not implemented yet
+packages/mcp               MCP tools (search_cards, get_checklist, get_card, report_feedback)
+packages/cli               the npx mustlist command: stdio MCP server, init, search
 apps/web                   the website (Next.js, served under /library)
 fixtures/                  good and bad cards used by the validator tests
 docs/card-spec.md          the card format
@@ -70,7 +89,7 @@ docs/card-spec.md          the card format
 
 ## Contributing
 
-Contributions will open after launch. Until then, [CONTRIBUTING.md](CONTRIBUTING.md) is a draft of how it will work. Please read the [Code of Conduct](CODE_OF_CONDUCT.md). To report harmful card content or a vulnerability, see [SECURITY.md](SECURITY.md).
+Ask for a card in [Requests](https://github.com/RIDAM7/mustlist/discussions/categories/requests) ("Need this too" is an upvote). To propose or fix a card, see [CONTRIBUTING.md](CONTRIBUTING.md). Please read the [Code of Conduct](CODE_OF_CONDUCT.md). To report harmful card content or a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## Licences
 

@@ -1,0 +1,27 @@
+{
+  "name": "@mustlist/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Read-only MCP tools for Mustlist cards, shared by the remote endpoint and the CLI.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./clients": "./src/clients.ts",
+    "./http": "./src/http.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.4.0",
+    "@mustlist/build": "workspace:*",
+    "@mustlist/schema": "workspace:*",
+    "mcp-handler": "^2.4.0",
+    "minisearch": "^7.2.0",
+    "semver": "^7.8.6",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@mustlist/validator": "workspace:*",
+    "@types/semver": "^7.8.0"
+  }
+}

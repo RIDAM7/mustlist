@@ -1,0 +1,48 @@
+{
+  "name": "mustlist",
+  "version": "0.1.0",
+  "description": "Reviewed \"build it properly\" cards for AI coding agents: an MCP server, an AGENTS.md index and search for your terminal.",
+  "license": "MIT",
+  "author": "Ridam Agrawal",
+  "homepage": "https://ridamagrawal.com/library",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RIDAM7/mustlist.git",
+    "directory": "packages/cli"
+  },
+  "bugs": "https://github.com/RIDAM7/mustlist/issues",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "coding-agents",
+    "agents-md",
+    "claude-code",
+    "cursor",
+    "best-practices",
+    "checklists"
+  ],
+  "type": "module",
+  "bin": {
+    "mustlist": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "node build.mjs"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@modelcontextprotocol/server": "^2.4.0",
+    "@mustlist/build": "workspace:*",
+    "@mustlist/mcp": "workspace:*",
+    "@mustlist/schema": "workspace:*",
+    "@mustlist/validator": "workspace:*",
+    "esbuild": "^0.28.2"
+  }
+}

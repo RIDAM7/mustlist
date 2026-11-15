@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   // Workspace packages ship TypeScript source.
-  transpilePackages: ['@mustlist/schema', '@mustlist/build'],
+  transpilePackages: ['@mustlist/schema', '@mustlist/build', '@mustlist/mcp'],
   // Pages are prerendered, but unknown URLs still read dist/ at request time.
   outputFileTracingRoot: path.join(import.meta.dirname, '..', '..'),
   outputFileTracingIncludes: { '/*': ['../../dist/**/*'] },

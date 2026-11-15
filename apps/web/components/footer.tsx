@@ -25,7 +25,7 @@ export function Footer() {
           >
             llms.txt
           </a>
-          <Link href="/connect#api" className="leading-8 md:leading-normal hover:text-fg">
+          <Link href="/connect?tab=api" className="leading-8 md:leading-normal hover:text-fg">
             API
           </Link>
         </nav>
