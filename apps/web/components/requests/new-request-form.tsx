@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useId, useMemo, useState } from 'react';
+import { stackTitle } from '@mustlist/schema/site';
+import { githubLinks } from '@/lib/community/links';
 import { STACK_CHOICES, techName, topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
 import { Icon } from '../icons';
-import { useToast } from '../toast';
-import { useViewer } from '../viewer';
+import { useCopy, useToast } from '../toast';
+import { openOnGitHub, useViewer } from '../viewer';
 
 export interface DuplicateSource {
   kind: 'card' | 'request';
@@ -58,7 +60,8 @@ export function NewRequestForm({
   const params = useSearchParams();
   const router = useRouter();
   const toast = useToast();
-  const { requireViewer } = useViewer();
+  const { mode, requireViewer } = useViewer();
+  const copy = useCopy();
   const topicId = useId();
   const whatId = useId();
 
@@ -109,7 +112,21 @@ export function NewRequestForm({
     );
 
   const submit = () => {
-    if (step < 3 || !what.trim()) return;
+    if (step < 3 || !what.trim() || what.length > WHAT_MAX) return;
+    if (mode === 'github') {
+      // Requests are GitHub Discussions: copy the answers, then open the request form there.
+      const title = `${topicName(topicSlug)} · ${stackTitle(stackSlug)}`;
+      const text = `${title}
+
+Topic: ${topicSlug}
+Stack: ${stackSlug}
+
+${what.trim()}
+`;
+      void copy(text, 'Copied · paste it into the request on GitHub');
+      openOnGitHub(githubLinks.newRequest);
+      return;
+    }
     requireViewer('request a card', () => {
       toast('Request #52 created');
       router.push('/requests');
@@ -293,7 +310,14 @@ export function NewRequestForm({
             className="btn btn-primary"
             aria-disabled={step < 3 || !what.trim() || what.length > WHAT_MAX}
           >
-            Submit request
+            {mode === 'github' ? (
+              <>
+                Submit on GitHub
+                <Icon name="external" size="sm" />
+              </>
+            ) : (
+              'Submit request'
+            )}
           </button>
         </div>
       </form>

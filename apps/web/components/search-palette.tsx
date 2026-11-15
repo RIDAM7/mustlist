@@ -16,7 +16,7 @@ import { loadSearchIndex } from '@mustlist/build/search';
 import { BASE_PATH } from '@mustlist/schema/constants';
 import { stackTitle } from '@mustlist/schema/site';
 import type { CardIndexEntry } from '@mustlist/schema/types';
-import { isSampleData, listProposals, listRequests, mostWanted } from '@/lib/community';
+import type { ProposalSummary, RequestSummary } from '@/lib/community';
 import { shortTitle } from '@/lib/card';
 import { CARD_STATUS, PROPOSAL_STATUS, REQUEST_STATUS, isOpenProposal } from '@/lib/status';
 import { topicName } from '@/lib/topics';
@@ -61,8 +61,15 @@ function cardResult(card: CardIndexEntry): Result {
   };
 }
 
-const requestResults = () =>
-  listRequests().map<Result & { text: string }>((r) => ({
+/** What the palette searches besides cards (passed from the root layout). */
+export interface CommunityIndex {
+  sample: boolean;
+  requests: RequestSummary[];
+  proposals: ProposalSummary[];
+}
+
+const requestResults = (requests: RequestSummary[]) =>
+  requests.map<Result & { text: string; wanted: boolean; need: number }>((r) => ({
     kind: 'Requests',
     key: `r${r.number}`,
     title: r.title,
@@ -70,27 +77,33 @@ const requestResults = () =>
     pill: REQUEST_STATUS[r.status].pill,
     status: REQUEST_STATUS[r.status].label,
     href: `/requests/${r.number}`,
-    text: `${r.title} ${topicName(r.topic)} ${r.topic} ${r.stack} #${r.number} ${r.body}`.toLowerCase(),
+    text: `${r.title} ${topicName(r.topic)} ${r.topic} ${r.stack} #${r.number}`.toLowerCase(),
+    wanted: (r.status === 'open' || r.status === 'in-progress') && !/^re-?check/i.test(r.title),
+    need: r.need,
   }));
 
-const proposalResults = () =>
-  listProposals().map<Result & { text: string; open: boolean }>((p) => ({
-    kind: 'Proposals',
-    key: `p${p.number}`,
-    title: p.title,
-    meta: `#${p.number} · @${p.author}`,
-    pill: PROPOSAL_STATUS[p.status].pill,
-    status: PROPOSAL_STATUS[p.status].label,
-    href: `/proposals/${p.number}`,
-    text: `${p.title} ${topicName(p.topic)} ${p.topic} #${p.number} ${p.summary}`.toLowerCase(),
-    open: isOpenProposal(p.status),
-  }));
+const proposalResults = (proposals: ProposalSummary[]) =>
+  [...proposals]
+    .sort((a, b) => b.updated.localeCompare(a.updated))
+    .map<Result & { text: string; open: boolean }>((p) => ({
+      kind: 'Proposals',
+      key: `p${p.number}`,
+      title: p.title,
+      meta: `#${p.number} · @${p.author}`,
+      pill: PROPOSAL_STATUS[p.status].pill,
+      status: PROPOSAL_STATUS[p.status].label,
+      href: `/proposals/${p.number}`,
+      text: `${p.title} ${topicName(p.topic)} ${p.topic} #${p.number} @${p.author}`.toLowerCase(),
+      open: isOpenProposal(p.status),
+    }));
 
 export function SearchProvider({
   cards,
+  community,
   children,
 }: {
   cards: CardIndexEntry[];
+  community: CommunityIndex;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -116,17 +129,26 @@ export function SearchProvider({
   return (
     <SearchContext.Provider value={openSearch}>
       {children}
-      {open && <SearchPalette cards={cards} initial={initial} onClose={() => setOpen(false)} />}
+      {open && (
+        <SearchPalette
+          cards={cards}
+          community={community}
+          initial={initial}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </SearchContext.Provider>
   );
 }
 
 function SearchPalette({
   cards,
+  community,
   initial,
   onClose,
 }: {
   cards: CardIndexEntry[];
+  community: CommunityIndex;
   initial: string;
   onClose: () => void;
 }) {
@@ -173,9 +195,16 @@ function SearchPalette({
         )
         .map(cardResult);
     }
-    const wanted = new Set(mostWanted(3).map((r) => `r${r.number}`));
-    const requests = requestResults().filter((r) => (q ? r.text.includes(q) : wanted.has(r.key)));
-    const proposals = proposalResults()
+    const allRequests = requestResults(community.requests);
+    const wanted = new Set(
+      allRequests
+        .filter((r) => r.wanted)
+        .sort((a, b) => b.need - a.need)
+        .slice(0, 3)
+        .map((r) => r.key),
+    );
+    const requests = allRequests.filter((r) => (q ? r.text.includes(q) : wanted.has(r.key)));
+    const proposals = proposalResults(community.proposals)
       .filter((p) => (q ? p.text.includes(q) : p.open))
       .slice(0, q ? 8 : 3);
     const all: [Kind, Result[]][] = [
@@ -184,7 +213,7 @@ function SearchPalette({
       ['Proposals', proposals],
     ];
     return all.filter(([k, items]) => items.length > 0 && (kind === 'All' || kind === k));
-  }, [cards, query, ranked, kind]);
+  }, [cards, community, query, ranked, kind]);
 
   const flat = groups.flatMap(([, items]) => items);
   const active = Math.min(selected, Math.max(flat.length - 1, 0));
@@ -276,7 +305,7 @@ function SearchPalette({
           <div key={label} role="group" aria-label={label}>
             <div className="label flex items-center gap-2 px-2.5 pb-1.5 pt-2.5">
               {label}
-              {isSampleData && label !== 'Cards' && <SampleBadge />}
+              {community.sample && label !== 'Cards' && <SampleBadge />}
             </div>
             {items.map((result) => {
               position += 1;

@@ -5,7 +5,8 @@ import { stackTitle } from '@mustlist/schema/site';
 import { JsonLd } from '@/components/json-ld';
 import { StackCards } from '@/components/stack-cards';
 import { Crumbs, NeedBox, SampleBadge } from '@/components/ui';
-import { isSampleData, requestProposalMeta, requestsForStack } from '@/lib/community';
+import { requestProposalMeta, requestsForStack } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getIndex, getStacks, splitId } from '@/lib/data';
 import { formatDate } from '@/lib/format';
 import { breadcrumbJsonLd, collectionJsonLd, isIndexable, robotsFor } from '@/lib/seo';
@@ -49,7 +50,8 @@ export default async function StackPage({ params }: PageProps<'/stacks/[stack]'>
   const url = `${LIBRARY_URL}/stacks/${stack}`;
   const name = stackTitle(stack);
   const techs = [...new Set(cards.flatMap((card) => card.stack))];
-  const requests = requestsForStack(stack);
+  const community = await loadCommunity();
+  const requests = requestsForStack(community, stack);
 
   return (
     <div className="wrap pb-24 pt-6 md:pt-8">
@@ -98,7 +100,7 @@ export default async function StackPage({ params }: PageProps<'/stacks/[stack]'>
           <div className="mb-3 flex items-baseline gap-2">
             <h2 className="sec-h text-[18px]">Requested for this stack</h2>
             <span className="count">{requests.length}</span>
-            {isSampleData && <SampleBadge />}
+            {community.source === 'sample' && <SampleBadge />}
           </div>
           <div className="rows">
             {requests.map((r) => {
@@ -108,7 +110,7 @@ export default async function StackPage({ params }: PageProps<'/stacks/[stack]'>
                   <NeedBox need={r.need} />
                   <div className="min-w-0 flex-1">
                     <div className="row-title">{r.title}</div>
-                    <div className="t-sm subtle">{requestProposalMeta(r)}</div>
+                    <div className="t-sm subtle">{requestProposalMeta(community, r)}</div>
                   </div>
                   <span className={cn('pill', status.pill)}>{status.label}</span>
                 </Link>

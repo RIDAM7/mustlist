@@ -9,7 +9,8 @@ import { roleLabel, type Comment, type Review } from '@/lib/community';
 import { formatShortDate, splitCode } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { VerdictPill } from './bits';
-import { nowIso, useProposalState } from './proposal-state';
+import { githubLinks } from '@/lib/community/links';
+import { useProposalState } from './proposal-state';
 
 /** One review (board 28). `body` is pre-rendered markdown for server reviews. */
 export function ReviewArticle({ review, body }: { review: Review; body?: ReactNode }) {
@@ -94,9 +95,10 @@ const KINDS: { id: Review['verdict']; label: string; hint: string }[] = [
 
 /** "Your review": comment, verdict, submit (board 28). */
 export function ReviewBox() {
-  const { viewer, requireViewer } = useViewer();
+  const { mode, viewer, requireViewer } = useViewer();
   const toast = useToast();
-  const { proposal, status, localReviews, addReview, approve, requestChanges } = useProposalState();
+  const { proposal, status, localReviews, addReview, approve, requestChanges, now } =
+    useProposalState();
   const [text, setText] = useState('');
   const own = viewer?.handle === proposal.author;
   const [kind, setKind] = useState<Review['verdict']>(own ? 'comment' : 'approved');
@@ -113,13 +115,25 @@ export function ReviewBox() {
           </h2>
         </div>
         <div className="p-4">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => requireViewer('review')}
-          >
-            Sign in to review
-          </button>
+          {mode === 'github' && proposal.url ? (
+            <a
+              href={githubLinks.reviewFiles(proposal.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              Review on GitHub
+              <Icon name="external" size="sm" />
+            </a>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => requireViewer('review')}
+            >
+              Sign in to review
+            </button>
+          )}
         </div>
       </section>
     );
@@ -132,7 +146,7 @@ export function ReviewBox() {
     addReview({
       id: `local-review-${localReviews.length + 1}`,
       author: viewer.handle,
-      date: nowIso(),
+      date: now,
       verdict: kind,
       body: text.trim(),
     });

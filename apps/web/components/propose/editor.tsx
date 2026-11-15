@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Icon } from '@/components/icons';
 import { Menu } from '@/components/overlay';
-import { useToast } from '@/components/toast';
+import { useCopy, useToast } from '@/components/toast';
 import { Pill, SampleBanner } from '@/components/ui';
-import { useViewer } from '@/components/viewer';
-import { isSampleData, listProposals } from '@/lib/community';
+import { openOnGitHub, useViewer } from '@/components/viewer';
+import { githubLinks } from '@/lib/community/links';
 import { stackName, topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
 import { type CheckReport, type Problem, SECTIONS, type Section, runChecks } from './checks';
-import type { Draft } from './draft';
+import { serializeCard, type Draft } from './draft';
 import { SectionPreview } from './preview';
 import {
   BasicsEditor,
@@ -119,7 +119,8 @@ export function EditorSkeleton() {
 function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
   const router = useRouter();
   const toast = useToast();
-  const { requireViewer } = useViewer();
+  const copy = useCopy();
+  const { mode: source, requireViewer } = useViewer();
   const [stored] = useState(() => readStored(storageKey));
   const [draft, setDraftState] = useState<Draft>(() => stored?.draft ?? initial);
   const [savedAt, setSavedAt] = useState<{ at: Date; restored: boolean } | null>(() =>
@@ -193,13 +194,22 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
   const topicLabel = draft.topic ? topicName(draft.topic) : 'New card';
   const stackLabel = draft.stack ? stackName(draft.stack) : 'stack';
   const heading = `${mode === 'new' ? 'New card' : 'Change'}: ${topicLabel} · ${stackLabel}`;
-  const nextNumber = Math.max(0, ...listProposals().map((p) => p.number)) + 1;
   const hasErrors = report.errors > 0;
 
   function submit() {
     setSubmitting(false);
+    if (source === 'github') {
+      // Proposals are pull requests: copy the card file, then open GitHub's editor for it.
+      void copy(serializeCard(draft), 'Copied · paste the card on GitHub');
+      openOnGitHub(
+        draft.cardId
+          ? githubLinks.editCardFile(draft.cardId)
+          : githubLinks.newCardFile(draft.topic),
+      );
+      return;
+    }
     requireViewer('submit a proposal', () => {
-      toast(`Proposal #${nextNumber} opened`);
+      toast('Proposal opened');
       router.push('/proposals');
     });
   }
@@ -285,7 +295,7 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
         </div>
       </div>
 
-      {isSampleData && (
+      {source === 'sample' && (
         <div className="wrap pt-4" style={MAX_WIDTH}>
           <SampleBanner />
         </div>

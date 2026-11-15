@@ -6,6 +6,9 @@ import { SearchProvider } from '@/components/search-palette';
 import { ToastProvider } from '@/components/toast';
 import { TopBar } from '@/components/top-bar';
 import { ViewerProvider } from '@/components/viewer';
+import { getPerson, toProposalSummary, toRequestSummary } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
+import { SAMPLE_VIEWER } from '@/lib/community/sample';
 import { getIndex } from '@/lib/data';
 import { SITE_NAME, SITE_PITCH, SITE_TAGLINE, SITE_URL } from '@/lib/site';
 import { THEME_SCRIPT } from '@/lib/theme';
@@ -27,7 +30,13 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  const community = await loadCommunity();
+  const searchIndex = {
+    sample: community.source === 'sample',
+    requests: community.requests.map(toRequestSummary),
+    proposals: community.proposals.map(toProposalSummary),
+  };
   return (
     <html
       lang="en"
@@ -45,8 +54,13 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           Skip to content
         </a>
         <ToastProvider>
-          <ViewerProvider>
-            <SearchProvider cards={getIndex()}>
+          <ViewerProvider
+            mode={community.source}
+            sampleViewer={
+              community.source === 'sample' ? getPerson(community.people, SAMPLE_VIEWER) : undefined
+            }
+          >
+            <SearchProvider cards={getIndex()} community={searchIndex}>
               <TopBar />
               <main id="main" className="flex-1">
                 {children}

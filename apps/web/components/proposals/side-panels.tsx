@@ -55,7 +55,7 @@ export function ChecksBox() {
 /* ── Approvals ──────────────────────────────────────────── */
 
 export function ApprovalsBox() {
-  const { approvals, approvedCount } = useProposalState();
+  const { approvals, approvedCount, people } = useProposalState();
   return (
     <section className="box" aria-labelledby="ap-h">
       <div className="box-h">
@@ -75,7 +75,7 @@ export function ApprovalsBox() {
             <Avatar handle={approval.handle} />
             <span className="t-sm flex-1">
               @{approval.handle}{' '}
-              <span className="subtle">· {roleLabel(getPerson(approval.handle).role)}</span>
+              <span className="subtle">· {roleLabel(getPerson(people, approval.handle).role)}</span>
             </span>
             {approval.state === 'approved' ? (
               <span className="t-sm ok inline-flex items-center gap-1">
@@ -107,7 +107,7 @@ function Requirement({ done, children }: { done: boolean; children: React.ReactN
 }
 
 export function AcceptBox({ size }: { size?: 'lg' }) {
-  const { viewer } = useViewer();
+  const { mode, viewer } = useViewer();
   const toast = useToast();
   const {
     proposal,
@@ -119,6 +119,7 @@ export function AcceptBox({ size }: { size?: 'lg' }) {
     approve,
     accept,
   } = useProposalState();
+  if (mode === 'github') return <GitHubAcceptBox size={size} />;
   if (viewer?.role !== 'maintainer') return null;
 
   const viewerApproved = approvals.some(
@@ -180,6 +181,46 @@ export function AcceptBox({ size }: { size?: 'lg' }) {
         <p className="t-xs ok mt-2.5" role="status">
           Accepted · card is now Verified.
         </p>
+      )}
+    </section>
+  );
+}
+
+/** GitHub mode: the accept rule, and the pull request where maintainers merge. */
+function GitHubAcceptBox({ size }: { size?: 'lg' }) {
+  const { proposal, approvedCount, maintainerApproved, accepted, status } = useProposalState();
+  if (status === 'closed') return null;
+  return (
+    <section className="box p-4" aria-labelledby="ac-h">
+      <div className="flex items-center justify-between">
+        <h2 id="ac-h" className="t-sm strong">
+          Accept
+        </h2>
+        <span className="badge">Maintainers</span>
+      </div>
+      <ul className="t-sm mt-3 flex flex-col gap-1.5">
+        <Requirement done={proposal.checks === 'passing'}>Checks passing</Requirement>
+        <Requirement done={approvedCount >= 2}>
+          2 approvals ({Math.min(approvedCount, 2)} of 2)
+        </Requirement>
+        <Requirement done={maintainerApproved}>1 from a maintainer</Requirement>
+      </ul>
+      {accepted ? (
+        <p className="t-xs ok mt-2.5" role="status">
+          Accepted.
+        </p>
+      ) : (
+        proposal.url && (
+          <a
+            href={proposal.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn('btn btn-secondary mt-3.5 w-full', size === 'lg' && 'btn-lg')}
+          >
+            Open on GitHub
+            <Icon name="external" size="sm" />
+          </a>
+        )
       )}
     </section>
   );

@@ -1,4 +1,4 @@
-import type { ActivityEvent, Person, Proposal, Request } from './types';
+import type { ActivityEvent, CommunityData, Person, Proposal, Request } from './types';
 
 /**
  * Sample community data, shown until requests and proposals are read from GitHub
@@ -884,3 +884,18 @@ export const ACTIVITY: ActivityEvent[] = [
   { actor: 'lena-dev', verb: 'opened', date: '2026-11-10T09:30:00Z', target: 'proposal:17' },
   { actor: 'RIDAM7', verb: 'asked', date: '2026-11-08T08:00:00Z', target: 'request:51' },
 ];
+
+/** The whole sample as one dataset (used when no GitHub token is set). */
+export function sampleCommunity(repo: string): CommunityData {
+  return {
+    source: 'sample',
+    repo,
+    fetchedAt: SAMPLE_NOW,
+    now: SAMPLE_NOW,
+    requestsEnabled: true,
+    people: PEOPLE,
+    requests: REQUESTS,
+    proposals: PROPOSALS,
+    activity: ACTIVITY,
+  };
+}

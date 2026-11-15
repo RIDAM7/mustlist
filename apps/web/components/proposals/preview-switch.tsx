@@ -9,11 +9,18 @@ export function PreviewSwitch({
   revisionLabel,
   revisionHeader,
   currentHeader,
+  hasCurrent = true,
+  currentBody,
   children,
 }: {
   revisionLabel: string;
   revisionHeader: ReactNode;
   currentHeader: ReactNode;
+  /** False for a new card: there is no current card to switch to. */
+  hasCurrent?: boolean;
+  /** The current card's body, when it differs from the proposal's. */
+  currentBody?: ReactNode;
+  /** The proposal's card body. */
   children: ReactNode;
 }) {
   const [mode, setMode] = useState<'revision' | 'current'>('revision');
@@ -32,21 +39,23 @@ export function PreviewSwitch({
           >
             {revisionLabel}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'current'}
-            className={cn('seg-b', mode === 'current' && 'seg-on')}
-            onClick={() => setMode('current')}
-          >
-            Current card
-          </button>
+          {hasCurrent && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'current'}
+              className={cn('seg-b', mode === 'current' && 'seg-on')}
+              onClick={() => setMode('current')}
+            >
+              Current card
+            </button>
+          )}
         </div>
       </div>
       <div className="box mt-4 px-4 pb-10 pt-6 md:px-12 md:pb-14 md:pt-10">
         {mode === 'revision' ? revisionHeader : currentHeader}
         <div className="mb-10 mt-8 h-px bg-border" />
-        {children}
+        {mode === 'current' && currentBody ? currentBody : children}
       </div>
     </>
   );

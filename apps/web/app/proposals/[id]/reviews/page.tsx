@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { LocalReviews, ReviewArticle, ReviewBox } from '@/components/proposals/reviews';
 import { proposalFromParam } from '@/components/proposals/server';
+import { loadCommunity } from '@/lib/community/load';
 import { ProposalSide } from '@/components/proposals/side-panels';
 import { renderCommentMarkdown } from '@/lib/markdown';
 
@@ -9,7 +10,7 @@ export const instant = false;
 
 export default async function ProposalReviews({ params }: PageProps<'/proposals/[id]'>) {
   const { id } = await params;
-  const proposal = proposalFromParam(id);
+  const proposal = proposalFromParam(await loadCommunity(), id);
   if (!proposal) notFound();
 
   return (

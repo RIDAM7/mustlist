@@ -2,14 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/icons';
 import { Avatar, EmptyState, SampleBadge } from '@/components/ui';
-import {
-  communityNow,
-  describeTarget,
-  getProposal,
-  isSampleData,
-  listActivity,
-  type ActivityEvent,
-} from '@/lib/community';
+import { describeTarget, getProposal, listActivity, type ActivityEvent } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getIndex } from '@/lib/data';
 import { compactAge, formatDate } from '@/lib/format';
 import { LIBRARY_URL, SITE_NAME } from '@/lib/site';
@@ -32,12 +26,13 @@ const VERB: Record<ActivityEvent['verb'], string> = {
 };
 
 /** What was accepted or re-checked recently. */
-export default function ActivityPage() {
-  const now = communityNow();
+export default async function ActivityPage() {
+  const community = await loadCommunity();
+  const now = new Date(community.now);
   const reviewed = getIndex()
     .filter((card) => card.last_verified && (card.status === 'verified' || card.status === 'stale'))
     .sort((a, b) => (b.last_verified ?? '').localeCompare(a.last_verified ?? ''));
-  const events = listActivity();
+  const events = listActivity(community);
 
   return (
     <div className="wrap pb-24 pt-10">
@@ -77,13 +72,14 @@ export default function ActivityPage() {
 
       <section className="mt-12 max-w-[760px]">
         <h2 className="label mb-1 flex items-center gap-2">
-          Community {isSampleData && <SampleBadge />}
+          Community {community.source === 'sample' && <SampleBadge />}
         </h2>
+        {events.length === 0 && <p className="t-sm subtle mt-3">Nothing yet.</p>}
         <ol>
           {events.map((event) => {
-            const target = describeTarget(event.target);
+            const target = describeTarget(community, event.target);
             const proposal = event.target.startsWith('proposal:')
-              ? getProposal(Number(event.target.split(':')[1]))
+              ? getProposal(community, Number(event.target.split(':')[1]))
               : undefined;
             const pill =
               event.verb === 'accepted' && proposal ? PROPOSAL_STATUS[proposal.status] : undefined;

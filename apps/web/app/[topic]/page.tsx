@@ -14,13 +14,8 @@ import {
   SectionHead,
   handleList,
 } from '@/components/ui';
-import {
-  approvalCount,
-  countComments,
-  isSampleData,
-  proposalsForTopic,
-  requestsForTopic,
-} from '@/lib/community';
+import { approvalCount, countComments, proposalsForTopic, requestsForTopic } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getCard, getIndex, getTopics } from '@/lib/data';
 import { formatDate, formatShortDate } from '@/lib/format';
 import { breadcrumbJsonLd, collectionJsonLd, isIndexable, robotsFor, truncate } from '@/lib/seo';
@@ -68,8 +63,10 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
   const cards = topicCards(topic);
   if (cards.length === 0) notFound();
   const url = `${LIBRARY_URL}/${topic}`;
-  const requests = requestsForTopic(topic);
-  const proposals = proposalsForTopic(topic);
+  const community = await loadCommunity();
+  const sample = community.source === 'sample';
+  const requests = requestsForTopic(community, topic);
+  const proposals = proposalsForTopic(community, topic);
   const lenses = LENSES.filter((lens) =>
     cards.some((c) => c.checklist.some((item) => item.lens === lens)),
   );
@@ -148,7 +145,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
               <SectionHead
                 title={
                   <span className="flex items-baseline gap-2">
-                    Open requests {isSampleData && <SampleBadge />}
+                    Open requests {sample && <SampleBadge />}
                   </span>
                 }
                 count={requests.length}
@@ -183,7 +180,7 @@ export default async function TopicPage({ params }: PageProps<'/[topic]'>) {
               <SectionHead
                 title={
                   <span className="flex items-baseline gap-2">
-                    Open proposals {isSampleData && <SampleBadge />}
+                    Open proposals {sample && <SampleBadge />}
                   </span>
                 }
                 count={proposals.length}

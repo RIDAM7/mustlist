@@ -5,11 +5,12 @@ import { Avatar, AvatarStack, EmptyState, SampleBadge, handleList } from '@/comp
 import { nextMajors } from '@/lib/card';
 import {
   approvalCount,
+  cardHistory,
   getPerson,
-  isSampleData,
   proposalsForCard,
   roleLabel,
 } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getCard, getIndex, splitId } from '@/lib/data';
 import { addDays, formatDate } from '@/lib/format';
 import { loadCard } from '@/lib/load-card';
@@ -44,10 +45,9 @@ export async function generateMetadata({
 /** Who proposed and reviewed, what changed, when. */
 export default async function CardHistoryPage({ params }: PageProps<'/[topic]/[stack]/history'>) {
   const card = await loadCard(params);
-  const proposals = proposalsForCard(card.id);
-  // A draft has never been accepted, so it has no history yet.
-  const accepted = card.status === 'draft' ? [] : proposals.filter((p) => p.status === 'accepted');
-  const open = proposals.filter((p) => isOpenProposal(p.status));
+  const community = await loadCommunity();
+  const accepted = cardHistory(community, card.id, card.status);
+  const open = proposalsForCard(community, card.id).filter((p) => isOpenProposal(p.status));
   const majors = nextMajors(card);
   const status = CARD_STATUS[card.status];
 
@@ -152,7 +152,7 @@ export default async function CardHistoryPage({ params }: PageProps<'/[topic]/[s
               <div className="mb-3 flex items-baseline gap-2">
                 <h2 className="sec-h text-[18px]">Open proposals</h2>
                 <span className="count">{open.length}</span>
-                {isSampleData && <SampleBadge />}
+                {community.source === 'sample' && <SampleBadge />}
               </div>
               <div className="rows">
                 {open.map((p) => {
@@ -189,7 +189,7 @@ export default async function CardHistoryPage({ params }: PageProps<'/[topic]/[s
             {card.reviewers.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {card.reviewers.map((handle) => {
-                  const person = getPerson(handle);
+                  const person = getPerson(community.people, handle);
                   return (
                     <Link
                       key={handle}

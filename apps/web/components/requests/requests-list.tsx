@@ -43,7 +43,18 @@ const SORTS: { value: Sort; label: string }[] = [
 ];
 
 /** All open spots, ranked by need (design board 20). J/K move, Enter opens, N new request. */
-export function RequestsList({ rows, now }: { rows: RequestRow[]; now: string }) {
+export function RequestsList({
+  rows,
+  now,
+  notSetUp = false,
+  setUpHref,
+}: {
+  rows: RequestRow[];
+  now: string;
+  /** GitHub mode, but the repository has no "Requests" discussion category yet. */
+  notSetUp?: boolean;
+  setUpHref?: string;
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('All');
   const [topic, setTopic] = useState('any');
@@ -117,7 +128,7 @@ export function RequestsList({ rows, now }: { rows: RequestRow[]; now: string })
 
   return (
     <>
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className={cn('mt-6 flex flex-wrap items-center gap-2', rows.length === 0 && 'hidden')}>
         <div className="seg" role="tablist" aria-label="Status">
           {TABS.map((t) => (
             <button
@@ -205,6 +216,32 @@ export function RequestsList({ rows, now }: { rows: RequestRow[]; now: string })
             <KeyHint keys={['N']} label="new request" />
           </div>
         </>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon="inbox"
+          title={notSetUp ? 'Requests are not open yet' : 'No requests yet'}
+          line={
+            notSetUp
+              ? 'They start once the repository has a "Requests" discussion category.'
+              : 'Ask for the first card.'
+          }
+          className="mt-4"
+        >
+          {notSetUp && setUpHref ? (
+            <a
+              href={setUpHref}
+              className="btn btn-secondary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Discussions on GitHub
+            </a>
+          ) : (
+            <Link href="/requests/new" className="btn btn-secondary">
+              New request
+            </Link>
+          )}
+        </EmptyState>
       ) : (
         <EmptyState
           icon="inbox"

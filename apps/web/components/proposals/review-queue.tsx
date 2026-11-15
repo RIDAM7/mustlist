@@ -6,12 +6,13 @@ import { Avatar, EmptyState } from '@/components/ui';
 import { useViewer } from '@/components/viewer';
 import {
   approvalCount,
-  communityNow,
-  listProposals,
   queueReason,
   reviewQueue,
-  type Proposal,
+  type Person,
+  type ProposalSummary,
+  type Review,
 } from '@/lib/community';
+import { githubLinks } from '@/lib/community/links';
 import { relativeTime } from '@/lib/format';
 import { PROPOSAL_STATUS, PROPOSAL_TYPE, isOpenProposal } from '@/lib/status';
 import { topicName } from '@/lib/topics';
@@ -20,16 +21,52 @@ import { ChecksMeta } from './bits';
 
 type Tab = 'waiting' | 'reviewed' | 'open';
 
+/** A proposal in the queue, with who reviewed it and how. */
+export type QueueItem = ProposalSummary & {
+  reviews: { author: string; verdict: Review['verdict'] }[];
+};
+
 /** "2 days ago" -> "2 days"; "Yesterday" -> "1 day". */
-function waitingFor(date: string): string {
-  const label = relativeTime(date, communityNow());
+function waitingFor(date: string, now: string): string {
+  const label = relativeTime(date, new Date(now));
   return label === 'Yesterday' ? '1 day' : label.replace(/ ago$/, '');
 }
 
-export function ReviewQueue() {
-  const { viewer, requireViewer } = useViewer();
+export function ReviewQueue({
+  proposals,
+  people,
+  now,
+}: {
+  proposals: QueueItem[];
+  people: Person[];
+  now: string;
+}) {
+  const { mode, viewer, requireViewer } = useViewer();
   const [tab, setTab] = useState<Tab>('waiting');
   const [topic, setTopic] = useState('All');
+
+  if (!viewer && mode === 'github') {
+    return (
+      <>
+        <h1 className="t-h2 text-[28px] leading-9">Review queue</h1>
+        <EmptyState
+          icon="queue"
+          title="Your queue is on GitHub"
+          line="Pull requests that ask for your review. Sign-in here comes next."
+          className="mt-6"
+        >
+          <a
+            href={githubLinks.reviewRequested}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary btn-sm"
+          >
+            Open on GitHub
+          </a>
+        </EmptyState>
+      </>
+    );
+  }
 
   if (!viewer) {
     return (
@@ -48,17 +85,17 @@ export function ReviewQueue() {
     );
   }
 
-  const waiting = reviewQueue(viewer.handle);
-  const reviewed = listProposals().filter((p) => p.reviews.some((r) => r.author === viewer.handle));
-  const open = listProposals().filter((p) => isOpenProposal(p.status));
-  const lists: Record<Tab, Proposal[]> = { waiting, reviewed, open };
+  const waiting = reviewQueue(people, proposals, viewer.handle);
+  const reviewed = proposals.filter((p) => p.reviews.some((r) => r.author === viewer.handle));
+  const open = proposals.filter((p) => isOpenProposal(p.status));
+  const lists: Record<Tab, QueueItem[]> = { waiting, reviewed, open };
   const current = lists[tab];
   const topics = ['All', ...new Set(current.map((p) => p.topic))];
   const activeTopic = topics.includes(topic) ? topic : 'All';
   const rows = current.filter((p) => activeTopic === 'All' || p.topic === activeTopic);
 
-  const reason = (p: Proposal) => {
-    if (tab === 'waiting') return queueReason(p, viewer.handle);
+  const reason = (p: QueueItem) => {
+    if (tab === 'waiting') return queueReason(people, p, viewer.handle);
     if (tab === 'reviewed') {
       const own = [...p.reviews].reverse().find((r) => r.author === viewer.handle);
       return own?.verdict === 'approved'
@@ -134,7 +171,7 @@ export function ReviewQueue() {
                 </div>
                 <div className="t-sm w-full pl-12 md:w-[220px] md:pl-0">
                   <div className="font-medium">{reason(p)}</div>
-                  <div className="t-xs subtle">waiting {waitingFor(p.updated)}</div>
+                  <div className="t-xs subtle">waiting {waitingFor(p.updated, now)}</div>
                 </div>
                 <ChecksMeta state={p.checks} className="hidden w-[88px] md:inline-flex" />
                 <span className="t-sm hidden w-14 md:block">{approvalCount(p)} of 2</span>

@@ -5,6 +5,7 @@ import { LiveTimeline } from '@/components/proposals/overview-parts';
 import { proposalFromParam } from '@/components/proposals/server';
 import { AcceptBox, PhoneStatusBoxes, ProposalSide } from '@/components/proposals/side-panels';
 import { getRequest } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getCard } from '@/lib/data';
 import { formatDate } from '@/lib/format';
 import { renderCommentMarkdown } from '@/lib/markdown';
@@ -16,9 +17,10 @@ export const instant = false;
 
 export default async function ProposalOverview({ params }: PageProps<'/proposals/[id]'>) {
   const { id } = await params;
-  const proposal = proposalFromParam(id);
+  const community = await loadCommunity();
+  const proposal = proposalFromParam(community, id);
   if (!proposal) notFound();
-  const request = proposal.request ? getRequest(proposal.request) : undefined;
+  const request = proposal.request ? getRequest(community, proposal.request) : undefined;
   const card = proposal.cardId ? getCard(proposal.cardId) : undefined;
   const accepted = proposal.status === 'accepted';
 

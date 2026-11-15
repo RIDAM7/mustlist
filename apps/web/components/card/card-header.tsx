@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { stackTitle } from '@mustlist/schema/site';
 import type { CardJSON } from '@mustlist/schema/types';
 import { agentMessage } from '@/lib/card';
-import { countComments, proposalsForCard } from '@/lib/community';
+import { cardHistory } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getRawMarkdown } from '@/lib/data';
 import { formatDate } from '@/lib/format';
 import { CARD_STATUS } from '@/lib/status';
@@ -14,12 +15,12 @@ import { CardActions } from './card-actions';
 export type CardTab = 'card' | 'history' | 'discussion';
 
 /** Breadcrumbs, title, status row, actions, banner and the Card · History · Discussion tabs. */
-export function CardHeader({ card, tab }: { card: CardJSON; tab: CardTab }) {
+export async function CardHeader({ card, tab }: { card: CardJSON; tab: CardTab }) {
   const stack = card.id.split('/')[1] ?? '';
   const status = CARD_STATUS[card.status];
-  const accepted =
-    card.status === 'draft' ? [] : proposalsForCard(card.id).filter((p) => p.status === 'accepted');
-  const discussion = countComments([]);
+  const accepted = cardHistory(await loadCommunity(), card.id, card.status);
+  // Card discussions live on GitHub Discussions; the count arrives with sign-in (step B).
+  const discussion = 0;
   const message = agentMessage(card, getRawMarkdown(card.id) ?? '');
 
   const tabs: { id: CardTab; label: string; href: string; count?: number }[] = [

@@ -5,9 +5,10 @@ import type { CardIndexEntry } from '@mustlist/schema/types';
 import { HomeSearch } from '@/components/home-search';
 import { Icon } from '@/components/icons';
 import { JsonLd } from '@/components/json-ld';
-import { NeedBox, SampleBadge } from '@/components/ui';
+import { EmptyState, NeedBox, SampleBadge } from '@/components/ui';
 import { shortTitle, topicStatus } from '@/lib/card';
-import { countComments, isSampleData, mostWanted, requestProposalMeta } from '@/lib/community';
+import { countComments, mostWanted, requestProposalMeta } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getIndex, getStacks, getTopics } from '@/lib/data';
 import { formatShortDate } from '@/lib/format';
 import { breadcrumbJsonLd, collectionJsonLd } from '@/lib/seo';
@@ -36,7 +37,8 @@ function latest(cards: CardIndexEntry[]) {
       };
 }
 
-export default function LibraryHome() {
+export default async function LibraryHome() {
+  const community = await loadCommunity();
   const cards = getIndex();
   const byId = new Map(cards.map((card) => [card.id, card]));
   const topics = getTopics().map((topic) => {
@@ -54,7 +56,7 @@ export default function LibraryHome() {
   });
   const stacks = getStacks().map((s) => stackTitle(s.stack));
   const recent = latest(cards);
-  const wanted = mostWanted(4);
+  const wanted = mostWanted(community, 4);
 
   return (
     <>
@@ -181,18 +183,25 @@ export default function LibraryHome() {
           <div className="mb-3 flex items-baseline justify-between md:mb-4">
             <div className="flex items-baseline gap-2">
               <h2 className="sec-h max-md:text-[18px]">Most wanted</h2>
-              {isSampleData && <SampleBadge />}
+              {community.source === 'sample' && <SampleBadge />}
             </div>
             <Link href="/requests" className="t-sm muted hover:text-fg max-md:leading-[44px]">
               All requests
             </Link>
           </div>
-          <div className="rows">
+          {wanted.length === 0 && (
+            <EmptyState icon="inbox" title="No requests yet" className="py-8 md:py-10">
+              <Link href="/requests/new" className="btn btn-secondary btn-sm">
+                Request a card
+              </Link>
+            </EmptyState>
+          )}
+          <div className={cn('rows', wanted.length === 0 && 'hidden')}>
             {wanted.map((request) => {
               const status = REQUEST_STATUS[request.status];
               const meta =
                 request.proposals.length > 0
-                  ? requestProposalMeta(request)
+                  ? requestProposalMeta(community, request)
                   : `${countComments(request.comments)} replies`;
               return (
                 <Link key={request.number} href={`/requests/${request.number}`} className="row">

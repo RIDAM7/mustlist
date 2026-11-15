@@ -28,11 +28,13 @@ export interface RequestViewProps {
   proposals: { number: number; title: string; pill: string; status: string }[];
   participants: string[];
   related: { id: string; label: string; pill: string; status: string }[];
+  /** The discussion on GitHub (GitHub mode). */
+  url?: string;
 }
 
 /** The ask and the debate (design boards 21 and 22). */
 export function RequestView(props: RequestViewProps) {
-  const { viewer, requireViewer } = useViewer();
+  const { mode, viewer, requireViewer } = useViewer();
   const toast = useToast();
   const [status, setStatus] = useState(props.status);
   const [needed, setNeeded] = useState(false);
@@ -41,9 +43,13 @@ export function RequestView(props: RequestViewProps) {
   const pill = REQUEST_STATUS[status];
 
   const toggleNeed = () =>
-    requireViewer('add Need this too', () => {
-      setNeeded((value) => !value);
-    });
+    requireViewer(
+      'add Need this too',
+      () => {
+        setNeeded((value) => !value);
+      },
+      props.url,
+    );
 
   const needButton = (big: boolean) => (
     <button
@@ -88,6 +94,17 @@ export function RequestView(props: RequestViewProps) {
             <span className="strong text-fg">@{props.author}</span> · {formatDate(props.created)}
           </div>
         </div>
+        {mode === 'github' && props.url && (
+          <a
+            href={props.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary btn-sm max-md:hidden"
+          >
+            Open on GitHub
+            <Icon name="external" size="sm" />
+          </a>
+        )}
         {maintainer && (
           <Menu
             label="Maintainer actions"
@@ -192,7 +209,7 @@ export function RequestView(props: RequestViewProps) {
             </Link>
           </div>
 
-          <Thread comments={props.comments} />
+          <Thread comments={props.comments} githubUrl={props.url} />
         </div>
 
         <aside className="hidden flex-[1_1_280px] flex-col gap-7 md:flex">

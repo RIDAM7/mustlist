@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/icons';
 import { ProposalsList } from '@/components/proposals/proposals-list';
-import { SampleBanner } from '@/components/ui';
-import { isSampleData } from '@/lib/community';
+import { SourceBanner } from '@/components/ui';
+import { listProposals, toProposalSummary } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { SITE_NAME } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function ProposalsPage() {
+export default async function ProposalsPage() {
+  const community = await loadCommunity();
   return (
     <div className="wrap pb-24 pt-6 md:pt-10">
       <div className="flex items-center justify-between gap-4">
@@ -22,8 +24,15 @@ export default function ProposalsPage() {
           New proposal
         </Link>
       </div>
-      {isSampleData && <SampleBanner className="mt-6" />}
-      <ProposalsList />
+      <SourceBanner
+        source={community.source}
+        unavailable={community.unavailable}
+        className="mt-6"
+      />
+      <ProposalsList
+        proposals={listProposals(community).map(toProposalSummary)}
+        now={community.now}
+      />
     </div>
   );
 }

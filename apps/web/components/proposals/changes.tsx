@@ -8,7 +8,8 @@ import { useViewer } from '@/components/viewer';
 import type { Comment, DiffRow, FieldChange, FieldThread } from '@/lib/community';
 import { formatShortDate, splitCode } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { nowIso, useProposalState } from './proposal-state';
+import { githubLinks } from '@/lib/community/links';
+import { useProposalState } from './proposal-state';
 
 const ROW_CLASS: Record<DiffRow['kind'], string> = {
   add: 'd-add',
@@ -204,7 +205,7 @@ function Thread({ thread, extra }: { thread?: FieldThread; extra: Comment[] }) {
 
 function FieldBox({ field, inlineCaption }: { field: FieldChange; inlineCaption: boolean }) {
   const { viewer, requireViewer } = useViewer();
-  const { fieldComments, addFieldComment } = useProposalState();
+  const { proposal, fieldComments, addFieldComment, now } = useProposalState();
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputId = useId();
@@ -216,7 +217,7 @@ function FieldBox({ field, inlineCaption }: { field: FieldChange; inlineCaption:
     addFieldComment(field.id, {
       id: `local-${field.id}-${extra.length + 1}`,
       author: viewer.handle,
-      date: nowIso(),
+      date: now,
       body,
     });
     setDraft('');
@@ -238,7 +239,13 @@ function FieldBox({ field, inlineCaption }: { field: FieldChange; inlineCaption:
             <button
               type="button"
               className="btn btn-ghost btn-sm"
-              onClick={() => requireViewer('comment', () => setComposing(true))}
+              onClick={() =>
+                requireViewer(
+                  'comment',
+                  () => setComposing(true),
+                  proposal.url && githubLinks.reviewFiles(proposal.url),
+                )
+              }
             >
               <Icon name="comment" size="sm" />
               Comment

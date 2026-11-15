@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { stackTitle } from '@mustlist/schema/site';
 import { NewRequestForm, type DuplicateSource } from '@/components/requests/new-request-form';
-import { Crumbs, SampleBanner } from '@/components/ui';
-import { countComments, isSampleData, listRequests } from '@/lib/community';
+import { Crumbs, SourceBanner } from '@/components/ui';
+import { countComments } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getIndex, getTopics } from '@/lib/data';
 import { formatDate } from '@/lib/format';
 import { CARD_STATUS, REQUEST_STATUS } from '@/lib/status';
@@ -14,9 +15,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function NewRequestPage() {
+export default async function NewRequestPage() {
+  const community = await loadCommunity();
   const cards = getIndex();
-  const requests = listRequests().filter((r) => r.status === 'open' || r.status === 'in-progress');
+  const requests = community.requests.filter(
+    (r) => r.status === 'open' || r.status === 'in-progress',
+  );
   const topics = [
     ...new Set([...getTopics().map((t) => t.topic), ...requests.map((r) => r.topic)]),
   ].sort((a, b) => topicName(a).localeCompare(topicName(b)));
@@ -52,7 +56,11 @@ export default function NewRequestPage() {
 
   return (
     <div className="wrap pb-24 pt-4 md:pt-8">
-      {isSampleData && <SampleBanner className="mb-6" />}
+      <SourceBanner
+        source={community.source}
+        unavailable={community.unavailable}
+        className="mb-6"
+      />
       <Crumbs items={[{ name: 'Requests', href: '/requests' }, { name: 'New' }]} />
       <h1 className="t-h2 mt-4 text-[28px] leading-9">Request a card</h1>
       <Suspense fallback={<div className="sk mt-8 h-96 max-w-[720px]" />}>

@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useViewer } from '@/components/viewer';
-import { getRequest, isSampleData } from '@/lib/community';
 import { stackName, topicName } from '@/lib/topics';
 import { type DraftChecklistItem, newDraft } from './draft';
 import { ProposeEditor } from './editor';
@@ -56,11 +55,17 @@ const SAMPLE_CHECKLIST: Record<number, Omit<DraftChecklistItem, 'key'>[]> = {
 };
 
 /** New card, optionally started from a request (`/propose?request=38`). */
-export function NewCardEditor() {
+export function NewCardEditor({
+  requests,
+}: {
+  /** Open requests, so `?request=<n>` can fill in the topic and stack. */
+  requests: { number: number; topic: string; stack: string }[];
+}) {
   const params = useSearchParams();
-  const { viewer } = useViewer();
+  const { mode, viewer } = useViewer();
   const number = Number(params.get('request'));
-  const request = Number.isInteger(number) && number > 0 ? getRequest(number) : undefined;
+  const request =
+    Number.isInteger(number) && number > 0 ? requests.find((r) => r.number === number) : undefined;
 
   const initial = newDraft({
     topic: request?.topic,
@@ -68,7 +73,7 @@ export function NewCardEditor() {
     title: request ? `${topicName(request.topic)} for a ${stackName(request.stack)} app` : '',
     request: request?.number ?? null,
     author: viewer?.handle,
-    checklist: request && isSampleData ? SAMPLE_CHECKLIST[request.number] : undefined,
+    checklist: request && mode === 'sample' ? SAMPLE_CHECKLIST[request.number] : undefined,
   });
 
   return (

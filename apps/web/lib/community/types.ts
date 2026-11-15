@@ -1,11 +1,34 @@
 import type { Lens, VerifyType } from '@mustlist/schema/constants';
+import type { CardJSON } from '@mustlist/schema/types';
 import type { ChecksState, ProposalStatus, ProposalType, RequestStatus } from '@/lib/status';
 
 /**
  * Community data: requests, proposals, reviews and people. GitHub is the engine
- * (Discussions, pull requests, reviews; decision D-021). Until that is wired up,
- * the site reads the sample data in ./sample.ts through the getters in ./index.ts.
+ * (decision D-021): requests are Discussions in the "Requests" category, proposals
+ * are pull requests that change cards, reviews are pull request reviews.
+ * `load.ts` reads GitHub when a token is set, otherwise the sample in `sample.ts`.
  */
+
+export type CommunitySource = 'github' | 'sample';
+
+/** Everything the community pages need, loaded once and cached (see `load.ts`). */
+export interface CommunityData {
+  source: CommunitySource;
+  /** `owner/name` of the GitHub repository. */
+  repo: string;
+  /** When the data was read. */
+  fetchedAt: string;
+  /** "Now" for relative dates: fixed in sample mode so the sample never ages. */
+  now: string;
+  /** True when GitHub could not be read; the pages then show empty lists. */
+  unavailable?: boolean;
+  /** False when the repository has no "Requests" discussion category yet. */
+  requestsEnabled: boolean;
+  people: Person[];
+  requests: Request[];
+  proposals: Proposal[];
+  activity: ActivityEvent[];
+}
 
 export type Role = 'maintainer' | 'reviewer' | 'contributor';
 
@@ -26,6 +49,8 @@ export interface Comment {
   /** Markdown. */
   body: string;
   replies?: Comment[];
+  /** Link to the comment on GitHub. */
+  url?: string;
 }
 
 export interface Request {
@@ -45,6 +70,8 @@ export interface Request {
   proposals: number[];
   /** Related card ids. */
   related: string[];
+  /** The discussion on GitHub. */
+  url?: string;
 }
 
 export interface Approval {
@@ -60,7 +87,8 @@ export interface TimelineStep {
 }
 
 export interface CheckRun {
-  name: 'Format' | 'Safety' | 'Links';
+  /** Check name as GitHub reports it ("Format", "Typecheck, lint, test, validate, build"). */
+  name: string;
   state: ChecksState;
   note: string;
   seconds?: number;
@@ -154,7 +182,33 @@ export interface Proposal {
   changes: FieldChange[];
   changeTotals?: { fields: number; added: number; changed: number; removed: number };
   reviews: Review[];
+  /** The pull request on GitHub. */
+  url?: string;
+  /** The card as this proposal would publish it (pull request head). */
+  previewCard?: CardJSON;
 }
+
+/** A proposal without its heavy parts, for lists and search. */
+export type ProposalSummary = Pick<
+  Proposal,
+  | 'number'
+  | 'type'
+  | 'title'
+  | 'topic'
+  | 'stack'
+  | 'author'
+  | 'opened'
+  | 'updated'
+  | 'status'
+  | 'checks'
+  | 'approvals'
+  | 'cardId'
+  | 'request'
+  | 'url'
+>;
+
+/** A request without its thread, for lists and search. */
+export type RequestSummary = Omit<Request, 'comments' | 'body'> & { replies: number };
 
 export type ActivityVerb =
   'opened' | 'requested-changes' | 'accepted' | 'approved' | 'commented' | 'asked';

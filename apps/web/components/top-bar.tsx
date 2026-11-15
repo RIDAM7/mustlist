@@ -59,7 +59,7 @@ export function TopBar() {
   const pathname = usePathname();
   const active = sectionOf(pathname);
   const openSearch = useSearch();
-  const { viewer, signOut, requireViewer } = useViewer();
+  const { mode, viewer, signOut, requireViewer } = useViewer();
   const mod = useModKey();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -123,7 +123,7 @@ export function TopBar() {
               </button>
             )}
           />
-        ) : (
+        ) : mode === 'sample' ? (
           <button
             type="button"
             className="btn btn-secondary"
@@ -131,7 +131,7 @@ export function TopBar() {
           >
             Sign in
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* Phone */}
@@ -174,7 +174,7 @@ function MenuSheet({
   pathname: string;
   onClose: () => void;
 }) {
-  const { viewer, signOut, requireViewer } = useViewer();
+  const { mode, viewer, signOut, requireViewer } = useViewer();
   const panelRef = useRef<HTMLDivElement>(null);
   const first = useRef(pathname);
 
@@ -253,7 +253,7 @@ function MenuSheet({
                 Sign out
               </button>
             </>
-          ) : (
+          ) : mode === 'sample' ? (
             <button
               type="button"
               className="btn btn-secondary btn-lg w-full"
@@ -264,6 +264,8 @@ function MenuSheet({
             >
               Sign in
             </button>
+          ) : (
+            link('/review', 'Review queue', pathname === '/review')
           )}
           <div className="side h-11 cursor-default text-[15px] hover:bg-transparent">
             Theme

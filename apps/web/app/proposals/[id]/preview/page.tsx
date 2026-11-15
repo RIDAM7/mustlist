@@ -3,6 +3,7 @@ import type { CardJSON } from '@mustlist/schema/types';
 import { CardBody } from '@/components/card/card-body';
 import { PreviewSwitch } from '@/components/proposals/preview-switch';
 import { proposalFromParam } from '@/components/proposals/server';
+import { loadCommunity } from '@/lib/community/load';
 import { AvatarStack, Crumbs, EmptyState, handleList } from '@/components/ui';
 import type { Proposal } from '@/lib/community';
 import { getCard } from '@/lib/data';
@@ -85,11 +86,14 @@ export const instant = false;
 
 export default async function ProposalPreview({ params }: PageProps<'/proposals/[id]'>) {
   const { id } = await params;
-  const proposal = proposalFromParam(id);
+  const proposal = proposalFromParam(await loadCommunity(), id);
   if (!proposal) notFound();
-  const card = proposal.cardId ? getCard(proposal.cardId) : undefined;
+  // The card as published now, and as this proposal would publish it (pull request head).
+  const current = proposal.cardId ? getCard(proposal.cardId) : undefined;
+  const revision = proposal.previewCard ?? current;
+  const card = current ?? revision;
 
-  if (!card) {
+  if (!card || !revision) {
     return (
       <div className="wrap pb-24 pt-5 md:pt-6">
         <EmptyState
@@ -101,27 +105,39 @@ export default async function ProposalPreview({ params }: PageProps<'/proposals/
     );
   }
 
-  const current = CARD_STATUS[card.status];
+  const currentStatus = CARD_STATUS[card.status];
+  // Sample proposals have no head card: show them as the design does (verified on accept).
+  const head = proposal.previewCard;
+  const headStatus = head ? CARD_STATUS[head.status] : { pill: 'p-success', label: 'Verified' };
+  const headVerified = head?.last_verified
+    ? `Last verified ${formatDate(head.last_verified)}`
+    : head && head.status === 'draft'
+      ? 'Not verified yet'
+      : 'Last verified on accept';
 
   return (
     <div className="wrap pb-24 pt-5 md:pt-6">
       <PreviewSwitch
         revisionLabel={`Revision ${proposal.revisions}`}
+        hasCurrent={Boolean(current)}
+        currentBody={
+          current && current !== revision ? <CardBody card={current} lensMode="stack" /> : undefined
+        }
         revisionHeader={
           <PreviewHeader
-            card={card}
-            pill="p-success"
-            status="Verified"
-            verified="Last verified on accept"
+            card={revision}
+            pill={headStatus.pill}
+            status={headStatus.label}
+            verified={headVerified}
             people={revisionPeople(proposal)}
-            version={proposal.toVersion ?? card.card_version}
+            version={proposal.toVersion ?? revision.card_version}
           />
         }
         currentHeader={
           <PreviewHeader
             card={card}
-            pill={current.pill}
-            status={current.label}
+            pill={currentStatus.pill}
+            status={currentStatus.label}
             verified={
               card.last_verified
                 ? `Last verified ${formatDate(card.last_verified)}`
@@ -132,7 +148,7 @@ export default async function ProposalPreview({ params }: PageProps<'/proposals/
           />
         }
       >
-        <CardBody card={card} lensMode="stack" />
+        <CardBody card={revision} lensMode="stack" />
       </PreviewSwitch>
     </div>
   );

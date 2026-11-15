@@ -10,31 +10,46 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
-import { getPerson, isSampleData, sampleViewerHandle, type Person } from '@/lib/community';
+import type { CommunitySource, Person } from '@/lib/community';
 import { Icon } from './icons';
 import { Modal } from './overlay';
 import { useToast } from './toast';
 
 /**
- * Who is signed in. Reading never needs an account; writing does. In sample mode
- * the viewer is the sample maintainer, and "Sign out" / "Sign in" switch between
- * the two states so both can be tried. Build step B replaces this with a GitHub App.
+ * Who is signed in, and where writes go. Reading never needs an account.
+ *
+ * - GitHub mode (D-021 step A): there is no sign-in yet. Every write opens the
+ *   matching page on GitHub (the `githubHref` of `requireViewer`).
+ * - Sample mode: the viewer is the sample maintainer, writes change local state,
+ *   and "Sign out" / "Sign in" switch between the two states so both can be tried.
+ *
+ * Build step B replaces both with "Sign in with GitHub" (a GitHub App).
  */
 
 interface ViewerContextValue {
+  mode: CommunitySource;
   viewer: Person | null;
   signIn: () => void;
   signOut: () => void;
-  /** Run `action` when signed in; otherwise ask to sign in, e.g. "Sign in to reply". */
-  requireViewer: (reason: string, action?: () => void) => void;
+  /**
+   * Run `action` when signed in; otherwise ask to sign in ("Sign in to reply").
+   * In GitHub mode, open `githubHref` instead.
+   */
+  requireViewer: (reason: string, action?: () => void, githubHref?: string) => void;
 }
 
 const ViewerContext = createContext<ViewerContextValue>({
+  mode: 'sample',
   viewer: null,
   signIn: () => {},
   signOut: () => {},
   requireViewer: () => {},
 });
+
+/** Opens a GitHub page in a new tab (write actions in GitHub mode). */
+export function openOnGitHub(href: string) {
+  window.open(href, '_blank', 'noopener,noreferrer');
+}
 
 export function useViewer() {
   return useContext(ViewerContext);
@@ -66,32 +81,45 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-export function ViewerProvider({ children }: { children: ReactNode }) {
+export function ViewerProvider({
+  mode,
+  sampleViewer,
+  children,
+}: {
+  mode: CommunitySource;
+  /** The signed-in person in sample mode. */
+  sampleViewer?: Person;
+  children: ReactNode;
+}) {
   const signedOut = useSyncExternalStore(subscribe, readSignedOut, () => false);
   const [prompt, setPrompt] = useState<{ reason: string; action?: () => void } | null>(null);
   const toast = useToast();
 
-  const viewer = isSampleData && !signedOut ? getPerson(sampleViewerHandle) : null;
+  const viewer = mode === 'sample' && !signedOut ? (sampleViewer ?? null) : null;
 
   const signIn = useCallback(() => {
-    if (isSampleData) writeSignedOut(false);
-  }, []);
+    if (mode === 'sample') writeSignedOut(false);
+  }, [mode]);
   const signOut = useCallback(() => {
     writeSignedOut(true);
     toast('Signed out');
   }, [toast]);
 
   const requireViewer = useCallback(
-    (reason: string, action?: () => void) => {
+    (reason: string, action?: () => void, githubHref?: string) => {
+      if (mode === 'github') {
+        if (githubHref) openOnGitHub(githubHref);
+        return;
+      }
       if (viewer) action?.();
       else setPrompt({ reason, action });
     },
-    [viewer],
+    [mode, viewer],
   );
 
   const value = useMemo(
-    () => ({ viewer, signIn, signOut, requireViewer }),
-    [viewer, signIn, signOut, requireViewer],
+    () => ({ mode, viewer, signIn, signOut, requireViewer }),
+    [mode, viewer, signIn, signOut, requireViewer],
   );
 
   return (
@@ -105,7 +133,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
           const action = prompt?.action;
           setPrompt(null);
           signIn();
-          toast(`Signed in as @${sampleViewerHandle}`);
+          toast(`Signed in as @${sampleViewer?.handle ?? 'you'}`);
           // The viewer updates on the next render; run the action after it.
           if (action) setTimeout(action, 0);
         }}

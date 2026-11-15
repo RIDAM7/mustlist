@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { Modal } from '@/components/overlay';
 import { useCopy } from '@/components/toast';
+import { useViewer } from '@/components/viewer';
 import { plural } from '@/lib/format';
 import { topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ export function SubmitDialog({
   onClose: () => void;
   onSubmit: (note: string) => void;
 }) {
+  const { mode: source } = useViewer();
   const titleId = useId();
   const noteId = useId();
   const [note, setNote] = useState('');
@@ -136,7 +138,14 @@ export function SubmitDialog({
             if (passing && agreed) onSubmit(note);
           }}
         >
-          Submit for review
+          {source === 'github' ? (
+            <>
+              Continue on GitHub
+              <Icon name="external" size="sm" />
+            </>
+          ) : (
+            'Submit for review'
+          )}
         </button>
       </div>
     </Modal>

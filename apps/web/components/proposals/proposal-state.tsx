@@ -2,11 +2,10 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import {
-  communityNow,
   getPerson,
-  getProposal,
   type Approval,
   type Comment,
+  type Person,
   type Proposal,
   type Review,
 } from '@/lib/community';
@@ -14,12 +13,17 @@ import type { ProposalStatus } from '@/lib/status';
 
 /**
  * Local, in-browser state for one proposal: approvals, accept, new reviews and
- * field comments. Nothing is saved (sample mode); build steps B and D send these
- * to GitHub instead.
+ * field comments. Nothing is saved: in sample mode they change this page only,
+ * and in GitHub mode the write buttons open GitHub instead (build steps B and D
+ * will send them from here).
  */
 
 interface ProposalState {
   proposal: Proposal;
+  /** Maintainers and reviewers, for roles and the accept rule. */
+  people: Person[];
+  /** "Now" for dates of local writes (fixed in sample mode). */
+  now: string;
   status: ProposalStatus;
   approvals: Approval[];
   approvedCount: number;
@@ -47,22 +51,17 @@ export function useProposalState(): ProposalState {
   return value;
 }
 
-export const nowIso = () => communityNow().toISOString();
-
-function mustGetProposal(number: number): Proposal {
-  const proposal = getProposal(number);
-  if (!proposal) throw new Error(`Unknown proposal #${number}`);
-  return proposal;
-}
-
 export function ProposalStateProvider({
-  number,
+  proposal,
+  people,
+  now,
   children,
 }: {
-  number: number;
+  proposal: Proposal;
+  people: Person[];
+  now: string;
   children: ReactNode;
 }) {
-  const proposal = mustGetProposal(number);
   const [status, setStatus] = useState<ProposalStatus>(proposal.status);
   const [approvals, setApprovals] = useState<Approval[]>(proposal.approvals);
   const [localApprover, setLocalApprover] = useState<string | null>(null);
@@ -94,11 +93,15 @@ export function ProposalStateProvider({
 
   const value = useMemo<ProposalState>(() => {
     const approved = approvals.filter((a) => a.state === 'approved');
-    const maintainerApproved = approved.some((a) => getPerson(a.handle).role === 'maintainer');
+    const maintainerApproved = approved.some(
+      (a) => getPerson(people, a.handle).role === 'maintainer',
+    );
     const reviews = [...localReviews, ...proposal.reviews];
     const reviewCount = reviews.reduce((sum, r) => sum + 1 + (r.replies?.length ?? 0), 0);
     return {
       proposal,
+      people,
+      now,
       status,
       approvals,
       approvedCount: approved.length,
@@ -122,6 +125,8 @@ export function ProposalStateProvider({
     };
   }, [
     proposal,
+    people,
+    now,
     status,
     approvals,
     localApprover,

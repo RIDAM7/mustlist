@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { RelativeTime } from '@/components/client-bits';
 import { SelectMenu } from '@/components/overlay';
 import { Avatar, EmptyState } from '@/components/ui';
-import { approvalCount, communityNow, listProposals, type Proposal } from '@/lib/community';
+import { approvalCount, type ProposalSummary } from '@/lib/community';
 import {
   PROPOSAL_STATUS,
   PROPOSAL_TYPE,
@@ -27,22 +27,26 @@ const TAB_STATUS: Partial<Record<Tab, ProposalStatus>> = {
 
 type Sort = 'updated' | 'newest';
 
-function inTab(proposal: Proposal, tab: Tab): boolean {
+function inTab(proposal: ProposalSummary, tab: Tab): boolean {
   if (tab === 'All') return true;
   if (tab === 'Open') return isOpenProposal(proposal.status);
   return proposal.status === TAB_STATUS[tab];
 }
 
-export function ProposalsList() {
-  const all = listProposals();
-  const now = communityNow().toISOString();
+export function ProposalsList({
+  proposals: all,
+  now,
+}: {
+  proposals: ProposalSummary[];
+  now: string;
+}) {
   const [tab, setTab] = useState<Tab>('Open');
   const [type, setType] = useState<ProposalType | 'all'>('all');
   const [topic, setTopic] = useState<string>('any');
   const [sort, setSort] = useState<Sort>('updated');
 
   const topics = useMemo(() => [...new Set(all.map((p) => p.topic))].sort(), [all]);
-  const matchesFilters = (p: Proposal) =>
+  const matchesFilters = (p: ProposalSummary) =>
     (type === 'all' || p.type === type) && (topic === 'any' || p.topic === topic);
 
   const rows = all
@@ -62,7 +66,7 @@ export function ProposalsList() {
 
   return (
     <>
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className={cn('mt-6 flex flex-wrap items-center gap-2', all.length === 0 && 'hidden')}>
         <div className="seg" role="tablist" aria-label="Status">
           {TABS.map((item) => (
             <button
@@ -114,7 +118,18 @@ export function ProposalsList() {
         />
       </div>
 
-      {rows.length === 0 ? (
+      {all.length === 0 ? (
+        <EmptyState
+          icon="pencil"
+          title="No proposals yet"
+          line="A proposal is a pull request that changes a card."
+          className="mt-4"
+        >
+          <Link href="/propose" className="btn btn-secondary btn-sm">
+            New proposal
+          </Link>
+        </EmptyState>
+      ) : rows.length === 0 ? (
         <EmptyState icon="pencil" title="No proposals match" line={filterLine} className="mt-4">
           {filtered && (
             <button

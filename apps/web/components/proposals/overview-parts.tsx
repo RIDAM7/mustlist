@@ -3,12 +3,12 @@
 import type { TimelineStep } from '@/lib/community';
 import { formatShortDate } from '@/lib/format';
 import { Timeline } from './bits';
-import { nowIso, useProposalState } from './proposal-state';
+import { useProposalState } from './proposal-state';
 
 /** The proposal timeline, plus anything approved or accepted in this browser. */
 export function LiveTimeline() {
-  const { proposal, accepted, localApprover, approvals } = useProposalState();
-  const today = formatShortDate(nowIso());
+  const { proposal, accepted, localApprover, approvals, now } = useProposalState();
+  const today = formatShortDate(now);
   const steps: TimelineStep[] = [...proposal.timeline];
   const pendingIndex = steps.findIndex(
     (step) => step.state === 'next' && step.label === 'Accepted',

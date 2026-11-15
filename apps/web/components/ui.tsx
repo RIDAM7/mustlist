@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { getPerson } from '@/lib/community';
+import { toneFor } from '@/lib/community';
 import { cn } from '@/lib/utils';
 import { Icon, type IconName } from './icons';
 
@@ -31,8 +31,7 @@ export function Avatar({
   link?: boolean;
   className?: string;
 }) {
-  const person = getPerson(handle);
-  const classes = cn('av', size && `av-${size}`, TONE_CLASS[person.tone], className);
+  const classes = cn('av', size && `av-${size}`, TONE_CLASS[toneFor(handle)], className);
   const initial = handle.charAt(0).toUpperCase();
   if (link) {
     return (
@@ -189,13 +188,38 @@ export function SampleBadge() {
   );
 }
 
-/** Shown on community pages while they read sample data. */
+/**
+ * Shown on community pages while they read sample data (no GitHub token), and
+ * when GitHub could not be read.
+ */
 export function SampleBanner({ className }: { className?: string }) {
   return (
     <div className={cn('banner banner-dash', className)} role="note">
       <span className="pill p-neutral">Sample data</span>
       <span className="muted flex-1">
-        Requests, proposals and sign-in connect to GitHub next. Nothing here is saved.
+        Shown until a GitHub token is set. Nothing here is saved.
+      </span>
+    </div>
+  );
+}
+
+/** The community data source, as a banner when it is not live GitHub data. */
+export function SourceBanner({
+  source,
+  unavailable,
+  className,
+}: {
+  source: 'github' | 'sample';
+  unavailable?: boolean;
+  className?: string;
+}) {
+  if (source === 'sample') return <SampleBanner className={className} />;
+  if (!unavailable) return null;
+  return (
+    <div className={cn('banner banner-warn', className)} role="status">
+      <span className="pill p-warning bg-transparent px-0">GitHub unavailable</span>
+      <span className="flex-1 text-fg">
+        Requests and proposals could not be loaded. Retrying soon.
       </span>
     </div>
   );

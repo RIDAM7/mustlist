@@ -3,38 +3,43 @@ import { stackTitle } from '@mustlist/schema/site';
 import type { CardJSON } from '@mustlist/schema/types';
 import { notFound } from 'next/navigation';
 import { ProfileTabs } from '@/components/profile-tabs';
-import { Avatar, SampleBanner } from '@/components/ui';
+import { Avatar, SourceBanner } from '@/components/ui';
 import {
   activityFor,
-  communityNow,
+  allHandles,
   describeTarget,
+  getPerson,
   getProposal,
-  isSampleData,
-  listPeople,
   listProposals,
   roleLabel,
+  type CommunityData,
   type ActivityEvent,
 } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getCard, getIndex } from '@/lib/data';
 import { compactAge } from '@/lib/format';
 import { CARD_STATUS, PROPOSAL_STATUS } from '@/lib/status';
 import { topicName } from '@/lib/topics';
 
-export function generateStaticParams() {
-  return listPeople().map((p) => ({ handle: p.handle }));
+export async function generateStaticParams() {
+  const community = await loadCommunity();
+  const handles = allHandles(community);
+  return (handles.length ? handles : ['RIDAM7']).map((handle) => ({ handle }));
 }
 
 export const instant = false;
 
-function findPerson(handle: string) {
-  return listPeople().find((p) => p.handle.toLowerCase() === handle.toLowerCase());
+/** Anyone who maintains, reviews, or took part; unknown handles are a 404. */
+function findPerson(community: CommunityData, handle: string) {
+  const known = allHandles(community).find((h) => h.toLowerCase() === handle.toLowerCase());
+  return known ? getPerson(community.people, known) : undefined;
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<'/people/[handle]'>): Promise<Metadata> {
   const { handle } = await params;
-  const person = findPerson(handle);
+  const person = findPerson(await loadCommunity(), handle);
   if (!person) return {};
   return { title: `@${person.handle} | Mustlist`, robots: { index: false, follow: true } };
 }
@@ -61,16 +66,17 @@ const ICON: Record<ActivityEvent['verb'], 'plus' | 'alertCircle' | 'check' | 'co
 /** A person's contributions (design board 34). */
 export default async function ProfilePage({ params }: PageProps<'/people/[handle]'>) {
   const { handle } = await params;
-  const person = findPerson(handle);
+  const community = await loadCommunity();
+  const person = findPerson(community, handle);
   if (!person) notFound();
-  const now = communityNow();
+  const now = new Date(community.now);
 
   // Cards come from the real card files: everyone listed as an author.
   const authoredCards = getIndex()
     .map((card) => getCard(card.id))
     .filter((card): card is CardJSON => Boolean(card?.authors.includes(person.handle)));
-  const proposals = listProposals().filter((p) => p.author === person.handle);
-  const reviews = listProposals().flatMap((p) =>
+  const proposals = listProposals(community).filter((p) => p.author === person.handle);
+  const reviews = listProposals(community).flatMap((p) =>
     p.reviews
       .filter((review) => review.author === person.handle)
       .map((review) => ({
@@ -82,10 +88,10 @@ export default async function ProfilePage({ params }: PageProps<'/people/[handle
       })),
   );
 
-  const feed = activityFor(person.handle).map((event) => {
-    const target = describeTarget(event.target);
+  const feed = activityFor(community, person.handle).map((event) => {
+    const target = describeTarget(community, event.target);
     const proposal = event.target.startsWith('proposal:')
-      ? getProposal(Number(event.target.split(':')[1]))
+      ? getProposal(community, Number(event.target.split(':')[1]))
       : undefined;
     const showPill = event.verb === 'opened' || event.verb === 'accepted';
     return {
@@ -101,7 +107,11 @@ export default async function ProfilePage({ params }: PageProps<'/people/[handle
 
   return (
     <div className="wrap pb-24 pt-8 md:pt-12">
-      {isSampleData && <SampleBanner className="mb-8" />}
+      <SourceBanner
+        source={community.source}
+        unavailable={community.unavailable}
+        className="mb-8"
+      />
       <div className="flex flex-wrap items-center gap-6">
         <Avatar handle={person.handle} size="xl" />
         <div className="min-w-0 flex-1">

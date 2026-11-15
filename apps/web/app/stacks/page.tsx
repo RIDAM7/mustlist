@@ -3,7 +3,7 @@ import { stackTitle } from '@mustlist/schema/site';
 import { JsonLd } from '@/components/json-ld';
 import { StacksGrid, type StackTile } from '@/components/stacks-grid';
 import { Crumbs } from '@/components/ui';
-import { listRequests } from '@/lib/community';
+import { loadCommunity } from '@/lib/community/load';
 import { getIndex, getStacks } from '@/lib/data';
 import { breadcrumbJsonLd } from '@/lib/seo';
 import { LIBRARY_URL, SITE_NAME } from '@/lib/site';
@@ -16,9 +16,10 @@ export const metadata: Metadata = {
 };
 
 /** Index of stacks: those with cards, then those only requested. */
-export default function StacksPage() {
+export default async function StacksPage() {
+  const community = await loadCommunity();
   const index = getIndex();
-  const open = listRequests().filter((r) => r.status === 'open' || r.status === 'in-progress');
+  const open = community.requests.filter((r) => r.status === 'open' || r.status === 'in-progress');
   const withCards = getStacks().map((s) => s.stack);
   const requestedOnly = [...new Set(open.map((r) => r.stack))].filter(
     (s) => !withCards.includes(s),
@@ -50,7 +51,7 @@ export default function StacksPage() {
         ])}
       />
       <Crumbs items={[{ name: 'Library', href: '/' }, { name: 'Stacks' }]} />
-      <StacksGrid tiles={tiles} />
+      <StacksGrid tiles={tiles} sample={community.source === 'sample'} />
     </div>
   );
 }

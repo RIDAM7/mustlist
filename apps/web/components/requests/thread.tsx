@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { personBadge } from '@/lib/community';
 import { formatShortDate } from '@/lib/format';
 import { renderCommentMarkdown } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
@@ -18,6 +17,10 @@ export interface ThreadComment {
   author: string;
   date: string;
   html: string;
+  /** "Maintainer" or "Reviewer". */
+  badge?: string;
+  /** The comment on GitHub. */
+  url?: string;
   replies: ThreadComment[];
 }
 
@@ -39,16 +42,19 @@ export function Thread({
   comments: initial,
   heading = 'Discussion',
   emptyLine = 'Discussion',
+  githubUrl,
 }: {
   comments: ThreadComment[];
   heading?: string;
   emptyLine?: string;
+  /** Where replies go in GitHub mode: the discussion, or a new one. */
+  githubUrl?: string;
 }) {
   const [comments, setComments] = useState(initial);
   const [order, setOrder] = useState<'oldest' | 'newest'>('oldest');
   const [expanded, setExpanded] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const { viewer, requireViewer } = useViewer();
+  const { mode, viewer, requireViewer } = useViewer();
   const toast = useToast();
   const boxRef = useRef<HTMLTextAreaElement>(null);
 
@@ -108,7 +114,7 @@ export function Thread({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={() => requireViewer('reply', () => boxRef.current?.focus())}
+            onClick={() => requireViewer('reply', () => boxRef.current?.focus(), githubUrl)}
           >
             Reply
           </button>
@@ -130,7 +136,9 @@ export function Thread({
               <CommentItem
                 comment={comment}
                 replying={replyTo === comment.id}
-                onReply={() => requireViewer('reply', () => setReplyTo(comment.id))}
+                onReply={() =>
+                  requireViewer('reply', () => setReplyTo(comment.id), comment.url ?? githubUrl)
+                }
                 onCancelReply={() => setReplyTo(null)}
                 onSubmitReply={(body) => addReply(comment.id, body)}
               />
@@ -139,25 +147,34 @@ export function Thread({
         </div>
       )}
 
-      {/* Desktop reply box */}
-      <div className="hidden grid-cols-[32px_minmax(0,1fr)] gap-3 border-t pt-5 md:grid" id="reply">
-        {viewer ? (
-          <Avatar handle={viewer.handle} size="md" />
-        ) : (
-          <span className="av av-md bg-bg-muted text-fg-subtle" aria-hidden="true">
-            <Icon name="user" size="sm" />
-          </span>
-        )}
-        <ReplyBox
-          textareaRef={boxRef}
-          onSubmit={(body) => requireViewer('reply', () => addComment(body))}
-          onFocusSignedOut={() => requireViewer('reply')}
-          signedIn={Boolean(viewer)}
-        />
-      </div>
+      {mode === 'github' ? (
+        <GitHubReply href={githubUrl} />
+      ) : (
+        <>
+          {/* Desktop reply box */}
+          <div
+            className="hidden grid-cols-[32px_minmax(0,1fr)] gap-3 border-t pt-5 md:grid"
+            id="reply"
+          >
+            {viewer ? (
+              <Avatar handle={viewer.handle} size="md" />
+            ) : (
+              <span className="av av-md bg-bg-muted text-fg-subtle" aria-hidden="true">
+                <Icon name="user" size="sm" />
+              </span>
+            )}
+            <ReplyBox
+              textareaRef={boxRef}
+              onSubmit={(body) => requireViewer('reply', () => addComment(body))}
+              onFocusSignedOut={() => requireViewer('reply')}
+              signedIn={Boolean(viewer)}
+            />
+          </div>
 
-      {/* Phone reply bar */}
-      <PhoneReplyBar onSubmit={(body) => requireViewer('reply', () => addComment(body))} />
+          {/* Phone reply bar */}
+          <PhoneReplyBar onSubmit={(body) => requireViewer('reply', () => addComment(body))} />
+        </>
+      )}
     </section>
   );
 }
@@ -185,7 +202,7 @@ function CommentItem({
         <Avatar handle={comment.author} size="md" />
       </span>
       <div className="min-w-0">
-        <Byline handle={comment.author} date={comment.date} />
+        <Byline handle={comment.author} date={comment.date} badge={comment.badge} />
         <div
           className="md t-body mt-1.5 max-md:mt-2"
           dangerouslySetInnerHTML={{ __html: comment.html }}
@@ -203,7 +220,10 @@ function CommentItem({
             className="btn btn-ghost btn-sm btn-icon max-md:hidden"
             aria-label="Copy link"
             onClick={() =>
-              void copy(`${window.location.href.split('#')[0]}#${comment.id}`, 'Link copied')
+              void copy(
+                comment.url ?? `${window.location.href.split('#')[0]}#${comment.id}`,
+                'Link copied',
+              )
             }
           >
             <Icon name="link" size="sm" />
@@ -221,7 +241,7 @@ function CommentItem({
                   <Avatar handle={reply.author} />
                 </span>
                 <div className="min-w-0">
-                  <Byline handle={reply.author} date={reply.date} small />
+                  <Byline handle={reply.author} date={reply.date} badge={reply.badge} small />
                   <div
                     className="md mt-1 text-[15px] leading-6 max-md:mt-1.5"
                     dangerouslySetInnerHTML={{ __html: reply.html }}
@@ -248,13 +268,14 @@ function CommentItem({
 function Byline({
   handle,
   date,
+  badge,
   small = false,
 }: {
   handle: string;
   date: string;
+  badge?: string;
   small?: boolean;
 }) {
-  const badge = personBadge(handle);
   return (
     <div className="t-sm flex items-center gap-2">
       <span className="md:hidden">
@@ -268,6 +289,43 @@ function Byline({
         {formatShortDate(date)}
       </time>
     </div>
+  );
+}
+
+/** GitHub mode: replies are written on GitHub until sign-in arrives (step B). */
+function GitHubReply({ href }: { href?: string }) {
+  if (!href) return null;
+  return (
+    <>
+      <div id="reply" className="hidden grid-cols-[32px_minmax(0,1fr)] gap-3 border-t pt-5 md:grid">
+        <span className="av av-md bg-bg-muted text-fg-subtle" aria-hidden="true">
+          <Icon name="user" size="sm" />
+        </span>
+        <div className="box flex items-center justify-between gap-3 py-3 pl-4 pr-3">
+          <span className="t-sm muted">Replies are written on GitHub.</span>
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary btn-sm"
+          >
+            Reply on GitHub
+            <Icon name="external" size="sm" />
+          </a>
+        </div>
+      </div>
+      <div className="sticky bottom-0 z-20 -mx-4 mt-4 border-t bg-bg px-3 pb-3 pt-2 md:hidden">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary btn-lg w-full"
+        >
+          Reply on GitHub
+          <Icon name="external" size="sm" />
+        </a>
+      </div>
+    </>
   );
 }
 

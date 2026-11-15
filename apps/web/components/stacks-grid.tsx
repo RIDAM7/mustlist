@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { isSampleData } from '@/lib/community';
 import { cn } from '@/lib/utils';
 
 export interface StackTile {
@@ -20,7 +19,7 @@ type Group = 'All' | 'Framework' | 'Data store' | 'Infra';
 const GROUPS: Group[] = ['All', 'Framework', 'Data store', 'Infra'];
 
 /** Stack tiles with "Group by" (design board 11). */
-export function StacksGrid({ tiles }: { tiles: StackTile[] }) {
+export function StacksGrid({ tiles, sample }: { tiles: StackTile[]; sample: boolean }) {
   const [group, setGroup] = useState<Group>('All');
 
   const sections: [string, StackTile[]][] =
@@ -96,7 +95,7 @@ export function StacksGrid({ tiles }: { tiles: StackTile[] }) {
                         <span className="subtle">verified</span>
                       </span>
                     )}
-                    <span title={isSampleData ? 'Sample data' : undefined}>
+                    <span title={sample ? 'Sample data' : undefined}>
                       <span className="strong">{tile.requested}</span>{' '}
                       <span className="subtle">requested</span>
                     </span>

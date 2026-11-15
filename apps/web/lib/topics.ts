@@ -99,3 +99,29 @@ export const STACK_CHOICES: { label: TechKind; items: string[] }[] = [
   { label: 'Data store', items: ['postgres', 'mysql', 'mongodb', 'sqlite'] },
   { label: 'Infra', items: ['s3', 'redis', 'any'] },
 ];
+
+/** `Payment webhooks` or `payments-webhooks` -> `payments-webhooks` (known names map back to their slug). */
+export function topicSlug(text: string): string {
+  const value = text.trim();
+  const known = Object.entries(TOPICS).find(
+    ([slug, info]) =>
+      slug === value.toLowerCase() || info.name.toLowerCase() === value.toLowerCase(),
+  );
+  if (known) return known[0];
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/** `Django + Next.js` or `django-nextjs` -> `django-nextjs`; `any stack` -> `any`. */
+export function stackSlug(text: string): string {
+  const value = text.trim().toLowerCase();
+  if (value === 'any' || value === 'any stack') return 'any';
+  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) return value;
+  return value
+    .split(/\s*\+\s*|\s*,\s*|\s+and\s+/)
+    .map((part) => part.replace(/[^a-z0-9]/g, ''))
+    .filter(Boolean)
+    .join('-');
+}
