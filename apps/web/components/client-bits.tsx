@@ -85,15 +85,23 @@ export function CopyButton({
   label = 'Copy',
   className = 'btn btn-ghost btn-sm',
   message,
+  ariaLabel,
 }: {
   value: string;
   label?: string;
   className?: string;
   message?: string;
+  /** Names what is copied when several Copy buttons share a page. */
+  ariaLabel?: string;
 }) {
   const copy = useCopy();
   return (
-    <button type="button" className={className} onClick={() => void copy(value, message)}>
+    <button
+      type="button"
+      className={className}
+      aria-label={ariaLabel}
+      onClick={() => void copy(value, message)}
+    >
       <Icon name="copy" size="sm" />
       {label}
     </button>

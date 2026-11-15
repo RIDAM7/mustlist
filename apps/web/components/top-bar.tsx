@@ -64,13 +64,13 @@ export function TopBar() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
-    <header className="border-b bg-bg">
+    <header className="topbar">
       {/* Desktop */}
-      <div className="wrap hidden h-16 items-center gap-6 md:flex">
+      <div className="wrap hidden h-14 items-center gap-3 md:flex">
         <Link href="/" className="wordmark">
           Mustlist
         </Link>
-        <nav aria-label="Main" className="flex gap-1">
+        <nav aria-label="Main" className="ml-4 flex items-center gap-0.5">
           {NAV.map((item) => (
             <Link
               key={item.id}
@@ -85,13 +85,13 @@ export function TopBar() {
         <div className="flex-1" />
         <button
           type="button"
-          className="searchbox w-[260px]"
+          className="searchbox w-[220px]"
           aria-label="Search cards, requests and proposals"
           onClick={() => openSearch()}
         >
           <Icon name="search" />
           <span className="flex-1 text-left">Search</span>
-          <span className="flex gap-0.5">
+          <span className="flex gap-[3px]">
             <Kbd>{mod}</Kbd>
             <Kbd>K</Kbd>
           </span>
@@ -126,7 +126,7 @@ export function TopBar() {
         ) : canSignIn ? (
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary btn-sm"
             onClick={() => requireViewer('continue')}
           >
             Sign in
@@ -200,6 +200,7 @@ function MenuSheet({
 
   const link = (href: string, label: string, current = false) => (
     <Link
+      key={href}
       href={href}
       className={cn('side h-11 text-[15px]', current && 'side-on')}
       aria-current={current ? 'page' : undefined}

@@ -63,18 +63,18 @@ export function CardBody({
   const stack = card.id.split('/')[1] ?? '';
 
   return (
-    <div className={cn('grid items-start gap-16', toc && 'lg:grid-cols-[minmax(0,1fr)_208px]')}>
-      <article className="flex min-w-0 flex-col gap-16 max-md:gap-10">
+    <div className={cn('grid items-start gap-12', toc && 'lg:grid-cols-[minmax(0,1fr)_240px]')}>
+      <article className="flex min-w-0 flex-col gap-12 max-md:gap-10">
         {toc && <TocSelect items={items} />}
 
         <section id="summary" aria-label="Summary">
-          <p className="rounded-lg bg-bg-subtle px-7 py-6 text-[19px] leading-[30px] tracking-[-0.006em] max-md:px-[18px] max-md:py-4 max-md:text-[17px] max-md:leading-[27px]">
+          <p className="panel text-pretty px-6 py-5 text-base leading-[27px] text-fg max-sm:p-4">
             {card.summary}
           </p>
-          <div className="t-sm mt-4 flex flex-wrap gap-x-6 gap-y-2">
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             {card.applies_when.app_types.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="subtle mr-0.5">For</span>
+                <span className="meta mr-0.5">For</span>
                 {card.applies_when.app_types.map((type) => (
                   <span key={type} className="tag mono">
                     {type}
@@ -84,7 +84,7 @@ export function CardBody({
             )}
             {card.applies_when.not_for.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="subtle mr-0.5">Not for</span>
+                <span className="meta mr-0.5">Not for</span>
                 {card.applies_when.not_for.map((type) => (
                   <span key={type} className="tag mono">
                     {type}
@@ -96,18 +96,20 @@ export function CardBody({
         </section>
 
         <section id="checklist" aria-labelledby="checklist-h">
-          <div className="flex items-baseline justify-between gap-4 max-md:flex-col max-md:gap-0.5">
-            <h2 id="checklist-h" className="sec-h max-md:text-[18px]">
+          <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+            <h2 id="checklist-h" className="sec-h">
               Must-have checklist
             </h2>
-            <span className="t-sm subtle max-md:text-xs">
+            <span className="meta">
               {musts.length} must · {shoulds.length} should
             </span>
           </div>
-          <ChecklistGroup title="Must" items={musts} start={0} first />
-          {shoulds.length > 0 && (
-            <ChecklistGroup title="Should" items={shoulds} start={musts.length} />
-          )}
+          <div className="box px-5 pb-1.5 pt-1 max-sm:px-4">
+            <ChecklistGroup title="Must" items={musts} start={0} first />
+            {shoulds.length > 0 && (
+              <ChecklistGroup title="Should" items={shoulds} start={musts.length} />
+            )}
+          </div>
         </section>
 
         <DecisionsAndOptions
@@ -150,27 +152,27 @@ export function CardBody({
         )}
 
         <section id="verify" aria-labelledby="verify-h">
-          <div className="mb-2 flex items-baseline justify-between gap-4">
-            <h2 id="verify-h" className="sec-h max-md:text-[18px]">
+          <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+            <h2 id="verify-h" className="sec-h">
               Verify checks
             </h2>
-            <span className="t-sm subtle">{card.verify.length} checks</span>
+            <span className="meta">{card.verify.length} checks</span>
           </div>
-          {card.verify.map((check, i) => (
-            <div
-              key={check.id}
-              className="grid grid-cols-[32px_minmax(0,1fr)_auto] gap-4 border-t py-3.5 max-md:grid-cols-[auto_1fr] max-md:gap-x-2 max-md:gap-y-1"
-            >
-              <span className="mono subtle text-xs leading-6">{pad2(i + 1)}</span>
-              <p className="text-[15px] leading-6 max-md:order-3 max-md:col-span-2">
-                {check.check}
-              </p>
-              <div className="flex items-start gap-1.5 pt-0.5 max-md:order-2 max-md:pt-0.5">
-                <span className="type">{check.type}</span>
-                <span className="lens">{LENS_TAG[check.lens]}</span>
+          <div className="box px-5 py-1 max-sm:px-4">
+            {card.verify.map((check, i) => (
+              <div
+                key={check.id}
+                className="ck first:border-t-0 max-md:grid-cols-[auto_1fr] max-md:gap-x-2 max-md:gap-y-1"
+              >
+                <span className="mono subtle t-sm leading-[22px]">{pad2(i + 1)}</span>
+                <p className="ck-t max-md:order-3 max-md:col-span-2">{check.check}</p>
+                <div className="flex items-start gap-1.5 max-md:order-2">
+                  <span className="type">{check.type}</span>
+                  <span className="tag tag-topic">{LENS_TAG[check.lens]}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
 
         {card.body.mistakes && (
@@ -186,25 +188,27 @@ export function CardBody({
         )}
 
         <section id="sources" aria-labelledby="sources-h">
-          <div className="mb-2 flex items-baseline justify-between gap-4">
-            <h2 id="sources-h" className="sec-h max-md:text-[18px]">
+          <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+            <h2 id="sources-h" className="sec-h">
               Sources
             </h2>
-            <span className="t-sm subtle">{card.sources.length} sources</span>
+            <span className="meta">{card.sources.length} sources</span>
           </div>
-          {card.sources.map((source) => (
-            <a
-              key={source.url}
-              href={source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex min-h-11 items-center gap-3 border-t py-2 hover:text-accent-text"
-            >
-              <span className="min-w-0 flex-1 text-sm">{source.title}</span>
-              <span className="mono subtle text-xs max-md:hidden">{hostOf(source.url)}</span>
-              <Icon name="external" size="sm" className="subtle" />
-            </a>
-          ))}
+          <div className="rows">
+            {card.sources.map((source) => (
+              <a
+                key={source.url}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="row min-h-11 py-2.5"
+              >
+                <span className="row-title min-w-0 flex-1 text-sm">{source.title}</span>
+                <span className="mono subtle text-xs max-md:hidden">{hostOf(source.url)}</span>
+                <Icon name="external" size="sm" className="subtle" />
+              </a>
+            ))}
+          </div>
           {card.body.further_reading && (
             <div
               className="md prose t-sm mt-4"
@@ -253,11 +257,11 @@ export function CardBody({
       </article>
 
       {toc && (
-        <aside className="sticky top-6 hidden flex-col gap-6 lg:flex">
+        <aside className="sticky top-6 hidden flex-col gap-5 lg:flex">
           <Toc items={items} />
-          <dl className="t-sm m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 border-t pt-5">
+          <dl className="box t-sm m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-4 py-3.5 [&_dd]:text-right">
             <dt className="subtle">Version</dt>
-            <dd className="mono m-0 text-xs leading-5">v{card.card_version}</dd>
+            <dd className="mono m-0">v{card.card_version}</dd>
             <dt className="subtle">Review</dt>
             <dd className="m-0">{reviewLabel(card)}</dd>
             <dt className="subtle">Licence</dt>
@@ -288,18 +292,26 @@ function ChecklistGroup({
 }) {
   return (
     <>
-      <div className={cn('label pb-2', first ? 'pt-5' : 'pt-7')}>{title}</div>
+      <p
+        className={cn(
+          'lvl pb-2.5',
+          title === 'Must' ? 'lvl-must' : 'lvl-should',
+          first ? 'pt-3' : 'border-t pt-5',
+        )}
+      >
+        {title}
+      </p>
       {items.map((item, i) => (
         <div key={item.id} className="ck max-md:grid-cols-[auto_1fr] max-md:gap-x-2 max-md:gap-y-1">
-          <span className="mono subtle text-xs leading-6">{pad2(start + i + 1)}</span>
+          <span className="mono subtle t-sm leading-[22px]">{pad2(start + i + 1)}</span>
           <div className="min-w-0 max-md:order-3 max-md:col-span-2">
             <p className="ck-t">
               <Html html={renderInline(item.text)} />
             </p>
             {item.why && <p className="ck-w">{item.why}</p>}
           </div>
-          <span className="lens mt-0.5 justify-self-start max-md:order-2">
-            {LENS_TAG[item.lens]}
+          <span className="justify-self-start max-md:order-2">
+            <span className="tag tag-topic">{LENS_TAG[item.lens]}</span>
           </span>
         </div>
       ))}

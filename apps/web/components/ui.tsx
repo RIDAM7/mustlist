@@ -21,7 +21,7 @@ const TONE_CLASS = ['', '', 'av-2', 'av-3', 'av-4'] as const;
 
 /** Initial avatar in the person's colour. Links to the profile unless `link` is false. */
 /** Pixel size of each avatar size, for the GitHub image request. */
-const AVATAR_PX = { sm: 20, md: 32, lg: 40, xl: 80 } as const;
+const AVATAR_PX = { sm: 20, md: 28, lg: 40, xl: 64 } as const;
 
 /**
  * GitHub photos are shown only with live GitHub data (set at build time in
@@ -156,10 +156,10 @@ export function SectionHead({
 /** The "need this too" counter box used in request rows. */
 export function NeedBox({ need }: { need: number }) {
   return (
-    <div className="need" aria-label={`${need} need this`}>
-      <Icon name="arrowUp" />
+    <span className="need" aria-label={`${need} need this`}>
+      <Icon name="caretUp" size="sm" />
       {need}
-    </div>
+    </span>
   );
 }
 

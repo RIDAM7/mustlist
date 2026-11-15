@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { type ClientSetup, clientSetups, TOOL_SUMMARIES } from '@mustlist/mcp/clients';
 import { cn } from '@/lib/utils';
+import { BrandMark } from './brand-marks';
 import { CopyButton } from './client-bits';
 
 type Tab = 'mcp' | 'agents' | 'llms' | 'api' | 'markdown';
@@ -59,6 +60,7 @@ function McpPanel({ mcpUrl }: { mcpUrl: string }) {
             className={cn('seg-b', s.id === client && 'seg-on')}
             onClick={() => setClient(s.id)}
           >
+            <BrandMark id={s.id} className="size-4 text-current" />
             {s.name}
           </button>
         ))}

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { stackTitle } from '@mustlist/schema/site';
 import type { CardIndexEntry } from '@mustlist/schema/types';
+import { AgentCard } from '@/components/agent-card';
+import { AGENT_BRANDS, BrandMark } from '@/components/brand-marks';
 import { HomeSearch } from '@/components/home-search';
 import { Icon } from '@/components/icons';
 import { JsonLd } from '@/components/json-ld';
@@ -63,192 +65,185 @@ export default async function LibraryHome() {
       <JsonLd data={collectionJsonLd(`${SITE_NAME} library`, LIBRARY_URL, cards)} />
       <JsonLd data={breadcrumbJsonLd([{ name: 'Library', url: LIBRARY_URL }])} />
 
-      <section className="wrap pb-10 pt-10 md:pb-[72px] md:pt-[88px]">
-        <h1 className="t-display max-w-[760px] max-md:text-[30px] max-md:leading-9 max-md:tracking-[-0.025em]">
-          Reviewed “build it properly” cards for AI coding agents.
-        </h1>
-        <p className="t-lead muted mt-3 max-w-[640px] max-md:text-base max-md:leading-6 md:mt-4">
-          What to build, what you forgot to ask for, and how to check it.
-        </p>
-        <HomeSearch className="mt-6 max-w-[720px] md:mt-8" />
-        <div className="mt-3 flex items-center gap-2 overflow-x-auto md:mt-4 md:flex-wrap">
-          <span className="t-sm subtle hidden md:inline">Popular</span>
-          {topics.slice(0, 4).map((topic) => (
-            <Link key={topic.slug} href={`/${topic.slug}`} className="tag max-md:h-8">
-              {topic.name}
-            </Link>
-          ))}
+      <section className="hero">
+        <div className="wrap flex flex-wrap items-start gap-10 pb-8 pt-7 md:pb-14 md:pt-14">
+          <div className="flex min-w-0 flex-[999_1_460px] flex-col gap-5 md:pt-4">
+            <h1 className="t-display max-w-[600px]">
+              Reviewed “build it properly” cards for AI coding agents.
+            </h1>
+            <p className="t-lead max-w-[560px]">
+              What to build, what you forgot to ask for, and how to check it.
+            </p>
+            <HomeSearch className="mt-2 max-w-[560px]" />
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="meta mr-0.5">Popular</span>
+              {topics.slice(0, 4).map((topic) => (
+                <Link
+                  key={topic.slug}
+                  href={`/${topic.slug}`}
+                  className="tag h-[30px] px-3 text-[13px]"
+                >
+                  {topic.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div className="w-full min-w-0 max-w-[520px] flex-[1_1_420px]">
+            <AgentCard mcpUrl={`${LIBRARY_URL}/mcp`} />
+          </div>
         </div>
       </section>
 
-      <section className="wrap pb-10 md:pb-[72px]" aria-labelledby="topics-h">
-        <div className="mb-3 flex items-baseline justify-between md:mb-4">
-          <h2 id="topics-h" className="sec-h max-md:text-[18px]">
-            Topics
-          </h2>
-          <Link
-            href="/stacks"
-            className="t-sm muted inline-flex items-center gap-1 hover:text-fg max-md:leading-[44px]"
-          >
-            All stacks <Icon name="chevronRight" size="sm" className="max-md:hidden" />
-          </Link>
-        </div>
-
-        {/* Desktop: tiles */}
-        <div className="hidden grid-cols-3 gap-4 md:grid">
-          {topics.map((topic) => (
-            <Link
-              key={topic.slug}
-              href={`/${topic.slug}`}
-              className="tile flex min-h-[148px] flex-col gap-2.5 p-5"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-base font-semibold">{topic.name}</span>
-                <span className={cn('pill', topic.status.pill)}>{topic.status.label}</span>
-              </div>
-              <p className="t-sm muted flex-1">{topic.line}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {topic.stacks.map((stack) => (
-                  <span key={stack} className="tag">
-                    {stack}
-                  </span>
-                ))}
-              </div>
-            </Link>
-          ))}
-          <Link
-            href="/stacks"
-            className="tile box-dash flex min-h-[148px] flex-col justify-center gap-1 bg-transparent p-5"
-          >
-            <span className="text-[15px] font-medium">Browse by stack</span>
-            <span className="t-sm subtle">{stacks.join(' · ')}</span>
-          </Link>
-        </div>
-
-        {/* Phone: rows */}
-        <div className="rows md:hidden">
-          {topics.map((topic) => (
-            <Link key={topic.slug} href={`/${topic.slug}`} className="row items-start px-4 py-3.5">
-              <div className="min-w-0 flex-1">
-                <span className="row-title text-[15px]">{topic.name}</span>
-                <p className="t-sm muted mt-0.5">{topic.line}</p>
-                <div className="t-xs subtle mt-1.5">{topic.stacks.join(' · ')}</div>
-              </div>
-              <span className={cn('pill', topic.status.pill)}>{topic.status.label}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="wrap grid gap-10 pb-10 md:grid-cols-2 md:gap-8 md:pb-[72px]">
-        <div>
-          <div className="mb-3 flex items-baseline justify-between md:mb-4">
-            <h2 className="sec-h max-md:text-[18px]">{recent.title}</h2>
-            <Link href="/activity" className="t-sm muted hover:text-fg max-md:hidden">
-              Activity
+      <div className="wrap pb-14">
+        <section className="pt-2" aria-labelledby="topics-h">
+          <div className="mb-3.5 flex items-baseline justify-between gap-3">
+            <h2 id="topics-h" className="t-h2">
+              Topics
+            </h2>
+            <Link href="/stacks" className="link t-sm inline-flex items-center gap-0.5">
+              All stacks <Icon name="chevronRight" size="sm" />
             </Link>
           </div>
-          <div className="rows">
-            {recent.cards.map((card) => {
-              const status = CARD_STATUS[card.status];
-              return (
-                <Link key={card.id} href={`/${card.id}`} className="row">
-                  <div className="min-w-0 flex-1">
-                    <div className="row-title">{shortTitle(card.title)}</div>
-                    <div className="t-sm subtle">
-                      {stackTitle(stackOf(card))}
-                      <span className="max-md:hidden">
-                        {' · '}
-                        <span className="mono text-xs">v{card.card_version}</span>
-                      </span>
-                      {card.last_verified && (
-                        <span className="md:hidden"> · {formatShortDate(card.last_verified)}</span>
-                      )}
-                    </div>
-                  </div>
-                  {card.last_verified && (
-                    <span className="t-sm subtle max-md:hidden">
-                      {formatShortDate(card.last_verified)}
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-3">
+            {topics.map((topic) => (
+              <Link key={topic.slug} href={`/${topic.slug}`} className="tile">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="t-h3">{topic.name}</h3>
+                  <span className={cn('pill', topic.status.pill)}>{topic.status.label}</span>
+                </div>
+                <p className="t-sm muted">{topic.line}</p>
+                <div className="mt-auto flex flex-wrap gap-1.5 pt-1.5">
+                  {topic.stacks.map((stack) => (
+                    <span key={stack} className="tag">
+                      {stack}
                     </span>
-                  )}
-                  <span className="mono subtle text-xs md:hidden">v{card.card_version}</span>
-                  <span className={cn('pill max-md:hidden', status.pill)}>{status.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-3 flex items-baseline justify-between md:mb-4">
-            <div className="flex items-baseline gap-2">
-              <h2 className="sec-h max-md:text-[18px]">Most wanted</h2>
-              {community.source === 'sample' && <SampleBadge />}
-            </div>
-            <Link href="/requests" className="t-sm muted hover:text-fg max-md:leading-[44px]">
-              All requests
+                  ))}
+                </div>
+              </Link>
+            ))}
+            <Link href="/stacks" className="tile box-dash justify-between">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="t-h3">Browse by stack</h3>
+                <Icon name="arrowRight" className="subtle" />
+              </div>
+              <p className="t-sm muted">{stacks.join(' · ')}</p>
             </Link>
           </div>
-          {wanted.length === 0 && (
-            <EmptyState icon="inbox" title="No requests yet" className="py-8 md:py-10">
-              <Link href="/requests/new" className="btn btn-secondary btn-sm">
-                Request a card
-              </Link>
-            </EmptyState>
-          )}
-          <div className={cn('rows', wanted.length === 0 && 'hidden')}>
-            {wanted.map((request) => {
-              const status = REQUEST_STATUS[request.status];
-              const meta =
-                request.proposals.length > 0
-                  ? requestProposalMeta(community, request)
-                  : `${countComments(request.comments)} replies`;
-              return (
-                <Link key={request.number} href={`/requests/${request.number}`} className="row">
-                  <NeedBox need={request.need} />
-                  <div className="min-w-0 flex-1">
-                    <div className="row-title">{request.title}</div>
-                    <div className="t-sm subtle max-md:hidden">{meta}</div>
-                    <div className="mt-1 md:hidden">
-                      <span className={cn('pill', status.pill)}>{status.label}</span>
-                    </div>
-                  </div>
-                  <span className={cn('pill max-md:hidden', status.pill)}>{status.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="wrap grid gap-3 pb-12 md:grid-cols-2 md:gap-4 md:pb-24">
-        <div className="panel flex items-center gap-4 p-6 max-md:flex-col max-md:items-stretch max-md:p-5">
-          <div className="flex-1">
-            <div className="text-[15px] font-semibold">Missing a card?</div>
-            <div className="t-sm muted max-md:mt-0.5">
-              Feature + stack. Others add “Need this too”.
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(440px,100%),1fr))] gap-x-8 gap-y-9 pt-9 md:pt-12">
+          <section aria-labelledby="latest-h">
+            <div className="mb-3.5 flex items-baseline justify-between gap-3">
+              <h2 id="latest-h" className="t-h2">
+                {recent.title}
+              </h2>
+              <Link href="/activity" className="link t-sm">
+                Activity
+              </Link>
             </div>
-          </div>
-          <Link
-            href="/requests/new"
-            className="btn btn-secondary max-md:mt-4 max-md:h-11 max-md:w-full"
-          >
-            Request a card
-          </Link>
-        </div>
-        <div className="panel flex items-center gap-4 p-6 max-md:flex-col max-md:items-stretch max-md:p-5">
-          <div className="flex-1">
-            <div className="text-[15px] font-semibold">Connect your agent</div>
-            <div className="t-sm muted max-md:mt-0.5">
-              <span className="mono text-xs">MCP · llms.txt · API</span>
-              <span className="max-md:hidden"> — verified cards only.</span>
+            <div className="rows">
+              {recent.cards.map((card) => {
+                const status = CARD_STATUS[card.status];
+                return (
+                  <Link key={card.id} href={`/${card.id}`} className="row">
+                    <div className="min-w-0 flex-1">
+                      <div className="row-title">{shortTitle(card.title)}</div>
+                      <div className="meta">
+                        {stackTitle(stackOf(card))} ·{' '}
+                        <span className="mono">v{card.card_version}</span>
+                      </div>
+                    </div>
+                    {card.last_verified && (
+                      <span className="meta shrink-0">{formatShortDate(card.last_verified)}</span>
+                    )}
+                    <span className={cn('pill', status.pill)}>{status.label}</span>
+                  </Link>
+                );
+              })}
             </div>
-          </div>
-          <Link href="/connect" className="btn btn-secondary max-md:mt-4 max-md:h-11 max-md:w-full">
-            Connect
-          </Link>
+          </section>
+
+          <section aria-labelledby="wanted-h">
+            <div className="mb-3.5 flex items-baseline justify-between gap-3">
+              <div className="flex items-baseline gap-2">
+                <h2 id="wanted-h" className="t-h2">
+                  Most wanted
+                </h2>
+                {community.source === 'sample' && <SampleBadge />}
+              </div>
+              <Link href="/requests" className="link t-sm">
+                All requests
+              </Link>
+            </div>
+            {wanted.length === 0 ? (
+              <EmptyState icon="inbox" title="No requests yet" className="md:min-h-[310px]">
+                <Link href="/requests/new" className="btn btn-secondary btn-sm">
+                  Request a card
+                </Link>
+              </EmptyState>
+            ) : (
+              <div className="rows">
+                {wanted.map((request) => {
+                  const status = REQUEST_STATUS[request.status];
+                  const meta =
+                    request.proposals.length > 0
+                      ? requestProposalMeta(community, request)
+                      : `${countComments(request.comments)} replies`;
+                  return (
+                    <Link
+                      key={request.number}
+                      href={`/requests/${request.number}`}
+                      className="row gap-4"
+                    >
+                      <NeedBox need={request.need} />
+                      <div className="min-w-0 flex-1">
+                        <div className="row-title">{request.title}</div>
+                        <div className="meta">{meta}</div>
+                      </div>
+                      <span className={cn('pill max-sm:hidden', status.pill)}>{status.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
-      </section>
+
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(440px,100%),1fr))] gap-x-8 gap-y-4 pt-9 md:pt-12">
+          <div className="banner flex-wrap justify-between gap-x-4 gap-y-3 px-5 py-4">
+            <div className="flex flex-col gap-0.5">
+              <p className="strong text-sm">Missing a card?</p>
+              <p className="t-sm muted">Feature + stack. Others add “Need this too”.</p>
+            </div>
+            <Link href="/requests/new" className="btn btn-secondary">
+              Request a card
+            </Link>
+          </div>
+          <div className="banner flex-wrap justify-between gap-x-4 gap-y-3 px-5 py-4">
+            <div className="flex flex-col gap-0.5">
+              <p className="strong text-sm">Connect your agent</p>
+              <p className="t-sm muted">
+                <span className="mono">MCP · llms.txt · API</span> — verified cards only.
+              </p>
+            </div>
+            <Link href="/connect" className="btn btn-secondary">
+              Connect
+            </Link>
+          </div>
+        </div>
+
+        <section className="pt-9 md:pt-12" aria-label="Works with">
+          <div className="works border-t pt-5">
+            <span className="label">Works with</span>
+            {AGENT_BRANDS.map((brand) => (
+              <span key={brand.id} className="works-i">
+                <BrandMark id={brand.id} />
+                {brand.name}
+              </span>
+            ))}
+          </div>
+        </section>
+      </div>
     </>
   );
 }

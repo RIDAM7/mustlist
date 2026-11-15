@@ -49,7 +49,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             key={toast.id}
             className={`toast toast-in pointer-events-auto ${toast.action ? '' : 'toast-plain'}`}
           >
-            <Icon name={toast.tone === 'error' ? 'alertCircle' : 'check'} />
+            <Icon
+              name={toast.tone === 'error' ? 'alertCircle' : 'check'}
+              className={toast.tone === 'error' ? 'bad' : 'ok'}
+            />
             {toast.message}
             {toast.action && (
               <button

@@ -37,19 +37,23 @@ function useActiveSection(items: TocItem[]) {
 export function Toc({ items }: { items: TocItem[] }) {
   const active = useActiveSection(items);
   return (
-    <nav aria-label="On this card" className="toc">
-      <div className="label mb-2.5">On this card</div>
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          className={cn(item.id === active && 'toc-on')}
-          aria-current={item.id === active ? 'location' : undefined}
-          onClick={() => goToSection(item.id)}
-        >
-          {item.label}
-        </button>
-      ))}
+    <nav aria-labelledby="toc-h" className="flex flex-col gap-2.5">
+      <p id="toc-h" className="label">
+        On this card
+      </p>
+      <div className="toc">
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={cn(item.id === active && 'toc-on')}
+            aria-current={item.id === active ? 'location' : undefined}
+            onClick={() => goToSection(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
     </nav>
   );
 }
@@ -59,7 +63,7 @@ export function TocSelect({ items }: { items: TocItem[] }) {
   const active = useActiveSection(items);
   const label = items.find((item) => item.id === active)?.label ?? items[0]?.label ?? '';
   return (
-    <div className="sticky top-0 z-20 -mx-4 -mb-6 border-b bg-bg px-4 py-2 md:-mx-8 md:px-8 lg:hidden">
+    <div className="sticky top-0 z-20 -mx-4 -mb-4 border-b bg-bg px-4 py-2 sm:-mx-6 sm:px-6 lg:hidden">
       <Menu
         label="On this card"
         align="left"

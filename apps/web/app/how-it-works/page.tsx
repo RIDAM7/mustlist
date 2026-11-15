@@ -87,7 +87,7 @@ const STATUSES: { label: string; pills: [string, string][] }[] = [
   {
     label: 'Proposal',
     pills: [
-      ['p-neutral', 'Draft'],
+      ['p-outline', 'Draft'],
       ['p-accent', 'In review'],
       ['p-warning', 'Changes requested'],
       ['p-success', 'Approved'],
@@ -100,6 +100,8 @@ const STATUSES: { label: string; pills: [string, string][] }[] = [
     pills: [
       ['p-success', 'Verified'],
       ['p-warning', 'Being re-checked'],
+      ['p-outline', 'Draft'],
+      ['p-accent', 'Proposed'],
     ],
   },
   {
@@ -131,10 +133,17 @@ export default function HowItWorksPage() {
               <div
                 className={cn(
                   'box flex min-h-[132px] flex-col gap-1.5 p-4',
-                  i === NODES.length - 1 && 'opt-rec',
+                  i === NODES.length - 1 && 'opt-rec bg-accent-soft',
                 )}
               >
-                <span className="mono t-xs subtle">{node.num}</span>
+                <span
+                  className={cn(
+                    'mono t-xs',
+                    i === NODES.length - 1 ? 'text-accent-text' : 'subtle',
+                  )}
+                >
+                  {node.num}
+                </span>
                 <span className="text-base font-semibold">{node.name}</span>
                 <span className="t-sm muted">{node.line}</span>
                 <span className="mt-auto">
@@ -148,13 +157,13 @@ export default function HowItWorksPage() {
               )}
             </div>
           ))}
-          <div className="relative col-[3/8] mx-20 h-10 rounded-b-lg border border-t-0 border-border-strong">
-            <Icon name="caretUp" size="sm" className="absolute -left-2 -top-1.5 text-fg-subtle" />
+          <div className="relative col-[3/8] mx-20 h-10 rounded-b-lg border-[1.5px] border-t-0 border-dashed border-warning">
+            <Icon name="caretUp" size="sm" className="absolute -left-2 -top-1.5 text-warning" />
             <span className="t-xs absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-bg px-2 font-medium text-warning">
               Changes requested
             </span>
           </div>
-          <div className="relative col-[1/12] mx-20 mt-6 h-10 rounded-b-lg border border-t-0 border-dashed border-border-strong">
+          <div className="relative col-[1/12] mx-20 mt-6 h-10 rounded-b-lg border-[1.5px] border-t-0 border-dashed border-border-strong">
             <Icon name="caretUp" size="sm" className="absolute -left-2 -top-1.5 text-fg-subtle" />
             <span className="t-xs subtle absolute -bottom-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-bg px-2">
               Re-check · older than 180 days, or a new major version
@@ -188,31 +197,30 @@ export default function HowItWorksPage() {
         </li>
       </ol>
 
-      <div className="mt-[72px] flex flex-wrap gap-12 max-md:mt-12">
-        <section className="flex-[1_1_480px]">
-          <h2 className="sec-h mb-4">Rules</h2>
-          <ul className="flex flex-col">
+      <div className="mt-[72px] flex flex-wrap gap-x-8 gap-y-10 max-md:mt-12">
+        <section className="min-w-0 flex-[1_1_420px]">
+          <h2 className="sec-h mb-3.5">Rules</h2>
+          <ul className="rows">
             {RULES.map((rule) => (
-              <li
-                key={rule.title}
-                className="grid grid-cols-[24px_minmax(0,1fr)] gap-3 border-t py-3.5"
-              >
-                <Icon name={rule.icon} className="mt-[3px]" />
-                <div>
-                  <div className="text-[15px] font-medium">{rule.title}</div>
-                  <div className="t-sm subtle">{rule.sub}</div>
+              <li key={rule.title} className="row items-start gap-3 py-3.5">
+                <span className="flex size-7 flex-none items-center justify-center rounded-lg bg-bg-muted text-fg-muted">
+                  <Icon name={rule.icon} size="sm" />
+                </span>
+                <div className="min-w-0">
+                  <div className="row-title">{rule.title}</div>
+                  <div className="t-sm muted">{rule.sub}</div>
                 </div>
               </li>
             ))}
           </ul>
         </section>
-        <section className="flex-[1_1_480px]">
-          <h2 className="sec-h mb-4">Statuses</h2>
-          <dl className="m-0">
+        <section className="min-w-0 flex-[1_1_420px]">
+          <h2 className="sec-h mb-3.5">Statuses</h2>
+          <dl className="rows m-0">
             {STATUSES.map((row) => (
               <div
                 key={row.label}
-                className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 border-t py-3"
+                className="row grid grid-cols-[80px_minmax(0,1fr)] items-start gap-3 py-3"
               >
                 <dt className="t-sm subtle">{row.label}</dt>
                 <dd className="m-0 flex flex-wrap gap-1.5">

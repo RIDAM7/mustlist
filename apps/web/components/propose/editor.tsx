@@ -248,7 +248,7 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
               <span className="truncate text-base font-semibold">
                 {topicLabel} · {stackLabel}
               </span>
-              <Pill pill="p-neutral" label="Draft" />
+              <Pill pill="p-outline" label="Draft" />
             </div>
           </div>
           <span className="t-sm subtle inline-flex items-center gap-1.5" role="status">

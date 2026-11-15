@@ -9,8 +9,8 @@ export interface PillStyle {
 export const CARD_STATUS: Record<Status, PillStyle> = {
   verified: { label: 'Verified', pill: 'p-success' },
   stale: { label: 'Being re-checked', pill: 'p-warning' },
-  proposed: { label: 'Proposed', pill: 'p-neutral' },
-  draft: { label: 'Draft', pill: 'p-neutral' },
+  proposed: { label: 'Proposed', pill: 'p-accent' },
+  draft: { label: 'Draft', pill: 'p-outline' },
 };
 
 export type RequestStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
@@ -26,7 +26,7 @@ export type ProposalStatus =
   'draft' | 'in-review' | 'changes-requested' | 'approved' | 'accepted' | 'closed';
 
 export const PROPOSAL_STATUS: Record<ProposalStatus, PillStyle> = {
-  draft: { label: 'Draft', pill: 'p-neutral' },
+  draft: { label: 'Draft', pill: 'p-outline' },
   'in-review': { label: 'In review', pill: 'p-accent' },
   'changes-requested': { label: 'Changes requested', pill: 'p-warning' },
   approved: { label: 'Approved', pill: 'p-success' },

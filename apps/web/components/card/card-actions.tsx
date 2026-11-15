@@ -70,13 +70,19 @@ export function CardActions({
       <div className="abar md:hidden">
         <button
           type="button"
-          className="btn btn-primary btn-lg flex-1 px-3 text-sm"
+          className="btn btn-primary btn-lg min-w-0 flex-1 px-3 text-sm"
           onClick={copyCard}
         >
           Copy for my agent
         </button>
-        <Link href={`/${id}/propose`} className="btn btn-secondary btn-lg px-3 text-sm">
-          Suggest a change
+        <Link
+          href={`/${id}/propose`}
+          className="btn btn-secondary btn-lg shrink-0 px-3 text-sm"
+          aria-label="Suggest a change"
+        >
+          <span>
+            Suggest<span className="max-[359px]:hidden"> a change</span>
+          </span>
         </Link>
         <Menu
           label="More actions"
