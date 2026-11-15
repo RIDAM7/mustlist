@@ -37,7 +37,7 @@ Until sign-in is built, every write button on the site opens the matching page o
 ## Setup for maintainers
 
 1. In the repository settings, turn on **Discussions** and add a category with the slug `requests` (an open-ended discussion format, so upvotes are on).
-2. Create a fine-grained token with read access to this repository's contents, discussions, pull requests, commit statuses and checks. Set it as `MUSTLIST_GITHUB_TOKEN` for the site (see [`apps/web/.env.example`](../apps/web/.env.example)).
+2. Create a fine-grained token for this repository with read-only access to contents, discussions, pull requests and commit statuses. Set it as `MUSTLIST_GITHUB_TOKEN` for the site (see [`apps/web/.env.example`](../apps/web/.env.example)).
 3. Add a repository webhook to `https://<site>/library/api/github/webhook` with a secret, content type `application/json`, and these events: discussions, discussion comments, pull requests, pull request reviews, pull request review comments, check suites, check runs, statuses and pushes. Set the same secret as `MUSTLIST_WEBHOOK_SECRET`.
 
 The site caches what it reads. A webhook delivery marks it stale so the next visit reads GitHub again; without a webhook it refreshes every hour.

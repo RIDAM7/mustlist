@@ -43,9 +43,12 @@ async function graphql<T>(
     body: JSON.stringify({ query, variables }),
   });
   if (!response.ok) throw new GitHubError(`GitHub GraphQL returned ${response.status}`);
-  const json = (await response.json()) as { data?: T; errors?: { message: string }[] };
-  if (json.errors?.length) throw new GitHubError(json.errors.map((e) => e.message).join('; '));
-  if (!json.data) throw new GitHubError('GitHub GraphQL returned no data');
+  const json = (await response.json()) as { data?: T | null; errors?: { message: string }[] };
+  const messages = (json.errors ?? []).map((e) => e.message).join('; ');
+  if (!json.data) throw new GitHubError(messages || 'GitHub GraphQL returned no data');
+  // A token without access to one field (for example check runs) still returns the
+  // rest of the data, with that field null. Keep the data and log what was refused.
+  if (messages) console.warn(`[community] GitHub returned partial data: ${messages}`);
   return json.data;
 }
 
