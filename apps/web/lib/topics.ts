@@ -31,11 +31,33 @@ const TOPICS: Record<string, { name: string; line: string; lead?: string }> = {
     line: 'Cache what is safe; invalidate on write.',
     lead: 'Cache what is safe, and invalidate it when data changes.',
   },
-  'background-jobs': { name: 'Background jobs', line: 'Queues, retries and idempotent workers.' },
+  'background-jobs': {
+    name: 'Background jobs',
+    line: 'Queues, retries and idempotent workers.',
+    lead: 'Durable queues, retries with backoff and workers that are safe to run twice.',
+  },
+  'connection-pooling': {
+    name: 'Connection pooling',
+    line: 'Serverless functions without running out of connections.',
+    lead: 'One pool per instance, a pooler in front of Postgres, migrations on a direct connection.',
+  },
   'multi-tenancy': { name: 'Multi-tenancy', line: 'Tenant isolation in one database.' },
-  'transactional-email': { name: 'Transactional email', line: 'Verification, reset and receipts.' },
+  'transactional-email': {
+    name: 'Transactional email',
+    line: 'Verification, reset and receipts.',
+    lead: 'Authenticated domains, sends from a queue, bounces and complaints suppressed.',
+  },
   search: { name: 'Search', line: 'Full-text search in Postgres.' },
-  'idempotency-keys': { name: 'Idempotency keys', line: 'Safe retries for writes.' },
+  'idempotency-keys': {
+    name: 'Idempotency keys',
+    line: 'Safe retries for writes.',
+    lead: 'Retries that never charge, create or send twice.',
+  },
+  'security-headers': {
+    name: 'Security headers',
+    line: 'CSP, HSTS and the headers browsers enforce.',
+    lead: 'A strict Content-Security-Policy, HSTS and the headers that stop framing and sniffing.',
+  },
 };
 
 export function topicName(topic: string): string {
