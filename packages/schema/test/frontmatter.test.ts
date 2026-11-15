@@ -133,6 +133,19 @@ describe('isOfficialDocsUrl', () => {
     expect(isOfficialDocsUrl('https://nextjs.org.evil.com/docs')).toBe(false);
     expect(isOfficialDocsUrl('not a url')).toBe(false);
   });
+
+  it('matches a repository entry only on that repository', () => {
+    const allow = ['github.com/porsager/postgres'];
+    expect(isOfficialDocsUrl('https://github.com/porsager/postgres', allow)).toBe(true);
+    expect(
+      isOfficialDocsUrl('https://github.com/porsager/postgres/blob/master/README.md', allow),
+    ).toBe(true);
+    expect(isOfficialDocsUrl('https://github.com/porsager/postgres#connection', allow)).toBe(true);
+    expect(isOfficialDocsUrl('https://github.com/porsager/postgres-evil', allow)).toBe(false);
+    expect(isOfficialDocsUrl('https://github.com/attacker/postgres', allow)).toBe(false);
+    expect(isOfficialDocsUrl('https://github.com/', allow)).toBe(false);
+    expect(isOfficialDocsUrl('https://gist.github.com/porsager/postgres', allow)).toBe(false);
+  });
 });
 
 describe('formatPath', () => {
