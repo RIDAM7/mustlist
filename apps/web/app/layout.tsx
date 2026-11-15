@@ -6,6 +6,7 @@ import { SearchProvider } from '@/components/search-palette';
 import { ToastProvider } from '@/components/toast';
 import { TopBar } from '@/components/top-bar';
 import { ViewerProvider } from '@/components/viewer';
+import { SkipLink } from '@/components/skip-link';
 import { getPerson, toProposalSummary, toRequestSummary } from '@/lib/community';
 import { loadCommunity } from '@/lib/community/load';
 import { SAMPLE_VIEWER } from '@/lib/community/sample';
@@ -47,12 +48,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-dvh flex-col">
-        <a
-          href="#main"
-          className="sr-only rounded-md bg-bg px-3 py-2 focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[70]"
-        >
-          Skip to content
-        </a>
+        <SkipLink />
         <ToastProvider>
           <ViewerProvider
             mode={community.source}

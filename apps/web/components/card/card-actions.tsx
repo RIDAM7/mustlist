@@ -29,7 +29,7 @@ export function CardActions({
     {
       label: 'Report a problem',
       icon: <Icon name="alertCircle" />,
-      onSelect: () => router.push(`/${id}/discussion#reply`),
+      onSelect: () => router.push(`/${id}/discussion?reply=1`),
     },
     {
       label: 'View raw .md',

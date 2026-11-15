@@ -9,6 +9,7 @@ import type { Comment, DiffRow, FieldChange, FieldThread } from '@/lib/community
 import { formatShortDate, splitCode } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { githubLinks } from '@/lib/community/links';
+import { goToSection } from '@/lib/scroll';
 import { useProposalState } from './proposal-state';
 
 const ROW_CLASS: Record<DiffRow['kind'], string> = {
@@ -319,26 +320,32 @@ export function ChangesView() {
         <div className="sticky top-6">
           <div className="label mb-2">Fields</div>
           {fields.map((field) => (
-            <a
+            <button
               key={field.id}
-              href={`#${field.id}`}
+              type="button"
               className={cn('side', field.id === active && 'side-on')}
-              onClick={() => setActive(field.id)}
+              onClick={() => {
+                setActive(field.id);
+                goToSection(field.id);
+              }}
             >
               <span>{field.name}</span>
               <span className="t-xs subtle mono">{field.short}</span>
-            </a>
+            </button>
           ))}
           {showUnchanged &&
             unchanged.map((field) => (
-              <a
+              <button
                 key={field.id}
-                href={`#${field.id}`}
+                type="button"
                 className="side subtle"
-                onClick={() => setActive(field.id)}
+                onClick={() => {
+                  setActive(field.id);
+                  goToSection(field.id);
+                }}
               >
                 <span>{field.name}</span>
-              </a>
+              </button>
             ))}
           <label className="t-sm muted mt-4 flex min-h-8 items-center gap-2 px-2.5">
             <input

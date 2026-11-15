@@ -1001,8 +1001,11 @@
     color: var(--fg);
     font-weight: 500;
   }
-  .toc a {
+  .toc button {
     display: block;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
     padding: 4px 0 4px 12px;
     font-size: 13px;
     line-height: 20px;
@@ -1012,7 +1015,7 @@
       color 0.15s,
       border-color 0.15s;
   }
-  .toc a:hover {
+  .toc button:hover {
     color: var(--fg);
   }
   .toc .toc-on {

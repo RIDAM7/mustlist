@@ -58,9 +58,13 @@ export function Thread({
   const toast = useToast();
   const boxRef = useRef<HTMLTextAreaElement>(null);
 
-  // "#reply" (from "Report a problem") focuses the reply box.
+  // "?reply=1" (from "Report a problem") focuses the reply box, then leaves a clean URL.
   useEffect(() => {
-    if (window.location.hash === '#reply') boxRef.current?.focus();
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('reply')) return;
+    boxRef.current?.focus();
+    url.searchParams.delete('reply');
+    history.replaceState(history.state, '', url);
   }, []);
 
   const sorted = order === 'oldest' ? comments : [...comments].reverse();
@@ -219,12 +223,7 @@ function CommentItem({
             type="button"
             className="btn btn-ghost btn-sm btn-icon max-md:hidden"
             aria-label="Copy link"
-            onClick={() =>
-              void copy(
-                comment.url ?? `${window.location.href.split('#')[0]}#${comment.id}`,
-                'Link copied',
-              )
-            }
+            onClick={() => void copy(comment.url ?? window.location.href, 'Link copied')}
           >
             <Icon name="link" size="sm" />
           </button>

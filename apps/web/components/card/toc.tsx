@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { TocItem } from '@/lib/card';
+import { goToSection } from '@/lib/scroll';
 import { cn } from '@/lib/utils';
 import { Menu } from '../overlay';
 
@@ -39,14 +40,15 @@ export function Toc({ items }: { items: TocItem[] }) {
     <nav aria-label="On this card" className="toc">
       <div className="label mb-2.5">On this card</div>
       {items.map((item) => (
-        <a
+        <button
           key={item.id}
-          href={`#${item.id}`}
+          type="button"
           className={cn(item.id === active && 'toc-on')}
           aria-current={item.id === active ? 'location' : undefined}
+          onClick={() => goToSection(item.id)}
         >
           {item.label}
-        </a>
+        </button>
       ))}
     </nav>
   );
@@ -65,7 +67,7 @@ export function TocSelect({ items }: { items: TocItem[] }) {
         items={items.map((item) => ({
           label: item.label,
           selected: item.id === active,
-          onSelect: () => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' }),
+          onSelect: () => goToSection(item.id),
         }))}
         trigger={(props) => (
           <button type="button" className="select h-9 w-full justify-between" {...props}>
