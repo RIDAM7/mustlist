@@ -27,7 +27,7 @@ You can also report a problem with a card using the **Correction** or **Card fee
 
 ## How a card becomes verified
 
-1. **Discuss** (recommended for new cards): describe the feature, the options and your sources in an issue before writing.
+1. **Request** (recommended for new cards): ask for the card in the **Requests** discussion category, and upvote existing requests instead of repeating them. See [docs/community.md](docs/community.md) for how the site shows requests and proposals.
 2. **Open a pull request.** CI runs typecheck, lint, tests, `pnpm validate` and a link check on changed cards. A pull request cannot merge while a check fails.
 3. **Review.** Code owners for the topic are requested automatically and use the checklist below.
 4. **Merge, then promote.** A maintainer merges and then marks the card `verified`, setting `last_verified`, `reviewers` and `review_level`, and bumping `card_version`.

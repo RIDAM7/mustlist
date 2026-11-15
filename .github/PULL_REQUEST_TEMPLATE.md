@@ -1,6 +1,6 @@
 ## What this changes
 
-<!-- One or two sentences. Link the issue or discussion if there is one. -->
+<!-- One or two sentences. If this answers a request, add a line like: Request: #42 -->
 
 ## Kind of contribution
 

@@ -1,0 +1,29 @@
+title: '<Topic> · <Stack>'
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask for a card that is missing: one feature on one stack. Upvote ("Need this too") instead of posting a duplicate. Upvotes rank requests; they never verify a card.
+  - type: input
+    id: topic
+    attributes:
+      label: Topic
+      description: The feature, as a slug or a name, for example `auth` or `Background jobs`.
+      placeholder: auth
+    validations:
+      required: true
+  - type: input
+    id: stack
+    attributes:
+      label: Stack
+      description: Technologies joined by `-`, framework first, for example `django-nextjs` or `nextjs-postgres`. Use `any` for stack-independent guidance.
+      placeholder: nextjs-postgres
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What are you building?
+      description: App type, how it is deployed, what you need first. Shown to whoever writes the card. No secrets.
+    validations:
+      required: true
