@@ -1,7 +1,5 @@
 # Contributing to Mustlist
 
-> **Draft.** Mustlist is not open for contributions yet. This page describes how it will work, so you can see the process early. Feedback on the process itself is welcome in an issue.
-
 Mustlist cards tell AI coding agents how to build a feature properly. Because agents act on what they read, every card is reviewed by people and checked by CI before agents see it.
 
 ## Ways to help
@@ -16,7 +14,11 @@ Mustlist cards tell AI coding agents how to build a feature properly. Because ag
 
 You can also report a problem with a card using the **Correction** or **Card feedback** issue forms.
 
-## Your first card in 5 minutes
+## Propose a card or a change
+
+**On the site (no tools needed).** Sign in with GitHub at [ridamagrawal.com/library](https://ridamagrawal.com/library), then use **Propose a card** or **Suggest a change** on any card. The editor checks the card as you type, saves your draft in your browser, and **Submit for review** opens the pull request for you: the Mustlist Library app commits your card in your name, signed off, and names you as the proposer. Send it again from the editor to add a revision.
+
+**With git (5 minutes).**
 
 1. Fork the repository and install: `pnpm install`.
 2. Create the card: `pnpm new-card <topic> <stack>`, for example `pnpm new-card rate-limiting nextjs-postgres`. It starts with `status: proposed`.
@@ -25,13 +27,19 @@ You can also report a problem with a card using the **Correction** or **Card fee
 5. Run `pnpm dev` and look at your card at `http://localhost:3000/library/<topic>/<stack>`.
 6. Commit with a sign-off (`git commit -s`) and open a pull request using the template. One card per pull request.
 
+Looking for something small to start with? Issues labelled [`good first card`](https://github.com/RIDAM7/mustlist/labels/good%20first%20card) are version entries and small fixes.
+
 ## How a card becomes verified
 
 1. **Request** (recommended for new cards): ask for the card in the **Requests** discussion category, and upvote existing requests instead of repeating them. See [docs/community.md](docs/community.md) for how the site shows requests and proposals.
-2. **Open a pull request.** CI runs typecheck, lint, tests, `pnpm validate` and a link check on changed cards. A pull request cannot merge while a check fails.
-3. **Review.** Code owners for the topic are requested automatically and use the checklist below.
-4. **Merge, then promote.** A maintainer merges and then marks the card `verified`, setting `last_verified`, `reviewers` and `review_level`, and bumping `card_version`.
-5. **Keep it fresh.** Verified cards are re-checked every 180 days and when a new major version of a covered package ships. Until a re-check lands, the card is marked `stale`.
+2. **Open a proposal** (a pull request), from the site or with git. Checks run on their own:
+   - **CI**: typecheck, lint, tests, `pnpm validate`, and a link check on changed cards.
+   - **Sign-off**: every commit carries a `Signed-off-by:` line that matches its author.
+   - **Card guard**: the changed cards validate, and only maintainers set the fields in the table below. It runs from the main branch, so a pull request can't change its own checks.
+   - **Labels**: kind (`new card`, `card change`, `code`, `docs`) and `topic: …` are added for you.
+3. **Review.** Code owners for the topic are requested automatically and use the checklist below. Reviewers can comment on a single field from the proposal's **Changes** tab.
+4. **Accept.** A maintainer clicks **Accept** on the proposal page. That approves it, marks the card `verified` on the proposal's branch (`last_verified`, `reviewers` from the approvals, `review_level`, and a `card_version` bump) and merges it once the checks pass. A request linked with `Request: #12` is closed as resolved.
+5. **Keep it fresh.** Every Monday a bot opens a **Re-check** issue for verified cards older than 180 days, a **New major version** issue when a package outgrows every range in a card, and one issue listing broken links.
 
 **New cards before there are enough reviewers** (seed level): 1 maintainer approval, plus the card's verify checks passing in a small sample app. These cards are labelled `review_level: seed` and re-reviewed later.
 
@@ -44,7 +52,7 @@ You can also report a problem with a card using the **Correction** or **Card fee
 | `reviewers`, `review_level`, `last_verified` | no (CI will fail)                  | yes        |
 | `card_version`                               | must increase when content changes | yes        |
 
-Maintainers are listed in [MAINTAINERS](MAINTAINERS).
+Maintainers are listed in [MAINTAINERS](MAINTAINERS), reviewers in [REVIEWERS.md](REVIEWERS.md).
 
 ## Reviewer checklist
 

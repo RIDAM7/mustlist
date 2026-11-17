@@ -31,6 +31,13 @@ Only **verified** cards are meant for agents. Drafts are visible on the website 
 claude mcp add --transport http mustlist https://ridamagrawal.com/library/mcp
 ```
 
+**Claude Code plugin**: the same server plus a skill that makes Claude check the card before it builds a feature:
+
+```text
+/plugin marketplace add RIDAM7/mustlist
+/plugin install mustlist@mustlist
+```
+
 Setup for Cursor, VS Code, Codex CLI and Windsurf is on the [Connect page](https://ridamagrawal.com/library/connect?tab=mcp). The server has four tools:
 
 | Tool              | What it returns                                                                                |
@@ -46,11 +53,11 @@ Every result starts with a note that card text is reference material and your in
 
 ```bash
 npx mustlist init     # add an index of the cards that fit your stack to AGENTS.md
-npx mustlist mcp      # the same MCP server over stdio, offline
+npx mustlist mcp      # the same MCP server over stdio (latest cards, cached; --offline for the bundled ones)
 npx mustlist search "stripe webhooks"
 ```
 
-**Without MCP**: add `.md` to any card URL for raw markdown, read [`/library/llms.txt`](https://ridamagrawal.com/library/llms.txt), or use the JSON API (`/library/api/index`, `/library/api/cards/<topic>/<stack>`, `/library/api/topics`, `/library/api/stacks`).
+**Without MCP**: add `.md` to any card URL for raw markdown, read [`/library/llms.txt`](https://ridamagrawal.com/library/llms.txt), or use the JSON API (`/library/api/index`, `/library/api/cards/<topic>/<stack>`, `/library/api/topics`, `/library/api/stacks`, and `/library/api/snapshot` for every card in one response).
 
 ## Quick start
 
@@ -89,7 +96,7 @@ docs/card-spec.md          the card format
 
 ## Contributing
 
-Ask for a card in [Requests](https://github.com/RIDAM7/mustlist/discussions/categories/requests) ("Need this too" is an upvote). To propose or fix a card, see [CONTRIBUTING.md](CONTRIBUTING.md). Please read the [Code of Conduct](CODE_OF_CONDUCT.md). To report harmful card content or a vulnerability, see [SECURITY.md](SECURITY.md).
+Ask for a card in [Requests](https://ridamagrawal.com/library/requests) ("Need this too" is an upvote). Propose or fix a card right on the site (sign in with GitHub, then **Propose a card** or **Suggest a change**), or with git: see [CONTRIBUTING.md](CONTRIBUTING.md). Checks, labels, acceptance and freshness reminders are automated; reviewers are in [REVIEWERS.md](REVIEWERS.md). Please read the [Code of Conduct](CODE_OF_CONDUCT.md). To report harmful card content or a vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## Licences
 

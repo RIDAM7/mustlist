@@ -41,8 +41,15 @@ With "Sign in with GitHub" set up, signed-in people write from the site, and it 
 | Submit request                               | A new discussion in Requests, in the request form's format   |
 | Mark resolved, close, close as duplicate     | Close the discussion (resolved, outdated, duplicate); reopen |
 | Approve, request changes, comment (proposal) | A pull request review                                        |
+| Comment on a field (Changes tab)             | A review comment on that field's lines in the card file      |
+| Submit for review (editor)                   | A pull request with the card, opened for you (see below)     |
+| Accept (maintainers)                         | Approve, promote on the branch, `accepted` label, auto-merge |
 
-GitHub decides who may do what: only maintainers can close someone else's request, and nobody can approve their own proposal. Per-field review comments, the card editor (step C) and Accept (step D) still open GitHub.
+GitHub decides who may do what: only maintainers can close someone else's request, and nobody can approve their own proposal.
+
+**Proposals from the editor.** GitHub only lets people open a pull request from a branch they can write to, so the Mustlist Library app does it for them: it commits the card to `proposals/<login>/<topic>-<stack>` with the person as the commit's author and sign-off (their GitHub noreply address), and opens the pull request with a hidden `mustlist-proposer` marker. The site, the checks and the approval count all treat that person as the proposer. Submitting again adds a revision to the same pull request. The editor keeps a change's status, reviewers and dates as they are and bumps `card_version` (minor), since maintainers set those when they accept.
+
+**Accept.** For a maintainer, the proposal page's Accept box approves the proposal (if they haven't yet), runs the same promotion as `pnpm promote` on the proposal's branch with the approvers as reviewers, adds the `accepted` label and turns on auto-merge (squash). The card guard check allows the promotion because a maintainer added the label; any later push by someone else removes the label. Seed level needs one maintainer; community level needs two approvals, one from a maintainer. Proposals from forks, or that change more than one file, are accepted on GitHub: run `pnpm promote` on the branch, add the `accepted` label, then merge.
 
 Without sign-in, every write button opens the matching page on GitHub. "Submit request" and the card editor copy what you wrote first, so you can paste it there.
 
@@ -55,9 +62,10 @@ Without sign-in, every write button opens the matching page on GitHub. "Submit r
 4. For sign-in, register a GitHub App (Settings → Developer settings → GitHub Apps):
    - Callback URLs: `https://<site>/library/api/auth/callback/github`, plus `http://localhost:3000/library/api/auth/callback/github` for local development.
    - Turn on "Expire user authorization tokens". Turn off the app's own webhook (the repository webhook above already refreshes the site).
-   - Repository permissions: **Discussions: read and write** and **Pull requests: read and write**. Metadata stays read-only. No account permissions, so no email.
+   - Repository permissions: **Contents: read and write**, **Discussions: read and write** and **Pull requests: read and write**. Metadata stays read-only. No account permissions, so no email. (Contents lets the app commit proposals from the editor, and lets maintainers accept and merge from the site.)
    - Install it on this repository only. A user's token can act only where the app is installed, and only as that user.
    - Set `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET` and `BETTER_AUTH_SECRET` (see [`apps/web/.env.example`](../apps/web/.env.example)).
+   - For proposals from the editor and closing requests on merge: generate a private key in the app's settings and set it as `GITHUB_APP_PRIVATE_KEY` (the whole PEM; writing `\n` for each line break also works), plus the app's numeric `GITHUB_APP_ID`. Without them the editor copies the card and opens GitHub's editor instead.
 
 Sessions have no database. Better Auth keeps them in encrypted, HttpOnly cookies, and refreshes the 8-hour GitHub token with its 6-month refresh token. A session lasts 30 days.
 
