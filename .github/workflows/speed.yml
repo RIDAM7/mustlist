@@ -22,7 +22,7 @@ jobs:
       - name: Run Lighthouse
         run: |
           mkdir -p reports
-          for path in "" "/auth/nextjs-postgres" "/requests"; do
+          for path in "" "/auth/nextjs-postgres" "/connect"; do
             name=$(echo "home$path" | tr '/' '-')
             npx -y lighthouse@13.6.0 "https://ridamagrawal.com/library$path" \
               --quiet --output=json --output-path="reports/$name.json" \
@@ -33,12 +33,17 @@ jobs:
         run: |
           node --input-type=module -e '
             import { readdirSync, readFileSync, appendFileSync } from "node:fs";
-            const rows = []; let low = false;
+            const rows = []; const details = []; let low = false;
             for (const file of readdirSync("reports")) {
               const report = JSON.parse(readFileSync(`reports/${file}`, "utf8"));
               const scores = Object.values(report.categories).map((c) => Math.round(c.score * 100));
               if (scores.some((s) => s < 95)) low = true;
-              rows.push(`| ${report.finalDisplayedUrl.replace("https://ridamagrawal.com", "")} | ${scores.join(" | ")} |`);
+              const page = report.finalDisplayedUrl.replace("https://ridamagrawal.com", "");
+              rows.push(`| ${page} | ${scores.join(" | ")} |`);
+              const a = report.audits;
+              const metrics = ["first-contentful-paint", "largest-contentful-paint", "total-blocking-time", "cumulative-layout-shift", "speed-index"].map((id) => `${a[id].title} ${a[id].displayValue}`);
+              const weak = Object.values(a).filter((x) => x.score !== null && x.score < 0.9 && ["binary", "numeric", "metricSavings"].includes(x.scoreDisplayMode)).map((x) => `${x.id}${x.displayValue ? ` (${x.displayValue})` : ""}`);
+              details.push(`**${page}**: ${metrics.join(" · ")}`, "", `Needs work: ${weak.join(", ") || "nothing"}`, "");
             }
             const table = ["### Lighthouse (mobile)", "", "| Page | Performance | Accessibility | Best practices | SEO |", "| --- | --- | --- | --- | --- |", ...rows].join("\n");
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, table + "\n");
