@@ -9,7 +9,7 @@ summary: >-
   input, invalidate tags where you write, never CDN-cache cookie responses, and
   fix slow SQL with indexes first.
 status: verified
-card_version: 1.0.0
+card_version: 1.0.1
 last_verified: 2026-11-15
 review_level: seed
 authors: [RIDAM7]
@@ -313,3 +313,4 @@ The framework cache costs nothing extra, but it starts empty after every deploy 
 - Caching a slow query instead of adding the missing index.
 - Using `use cache: remote` for keys that are unique per request, so the hit rate is near zero.
 - Omitting `cacheLife` and relying on the implicit `default` profile.
+- Test line for the automation check (this PR is closed without merging).
