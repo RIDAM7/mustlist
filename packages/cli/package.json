@@ -1,6 +1,6 @@
 {
   "name": "mustlist",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Reviewed \"build it properly\" cards for AI coding agents: an MCP server, an AGENTS.md index and search for your terminal.",
   "license": "MIT",
   "author": "Ridam Agrawal",
