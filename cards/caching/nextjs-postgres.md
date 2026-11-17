@@ -313,4 +313,3 @@ The framework cache costs nothing extra, but it starts empty after every deploy 
 - Caching a slow query instead of adding the missing index.
 - Using `use cache: remote` for keys that are unique per request, so the hit rate is near zero.
 - Omitting `cacheLife` and relying on the implicit `default` profile.
-- Test line for the automation check (this PR is closed without merging).
