@@ -45,7 +45,7 @@ jobs:
               const weak = Object.values(a).filter((x) => x.score !== null && x.score < 0.9 && ["binary", "numeric", "metricSavings"].includes(x.scoreDisplayMode)).map((x) => `${x.id}${x.displayValue ? ` (${x.displayValue})` : ""}`);
               details.push(`**${page}**: ${metrics.join(" · ")}`, "", `Needs work: ${weak.join(", ") || "nothing"}`, "");
             }
-            const table = ["### Lighthouse (mobile)", "", "| Page | Performance | Accessibility | Best practices | SEO |", "| --- | --- | --- | --- | --- |", ...rows].join("\n");
+            const table = ["### Lighthouse (mobile)", "", "| Page | Performance | Accessibility | Best practices | SEO |", "| --- | --- | --- | --- | --- |", ...rows, "", ...details].join("\n");
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, table + "\n");
             console.log(table);
             if (low) { console.log("::error::A Lighthouse score is below 95."); process.exitCode = 1; }
