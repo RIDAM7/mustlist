@@ -1,0 +1,47 @@
+name: Speed
+
+# Weekly Lighthouse run (mobile) on the live site. The job summary lists the
+# scores, and the run fails when a category drops below 95, so it shows up red.
+on:
+  schedule:
+    - cron: '41 6 * * 1' # Mondays 06:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - name: Run Lighthouse
+        run: |
+          mkdir -p reports
+          for path in "" "/auth/nextjs-postgres" "/requests"; do
+            name=$(echo "home$path" | tr '/' '-')
+            npx -y lighthouse@13.6.0 "https://ridamagrawal.com/library$path" \
+              --quiet --output=json --output-path="reports/$name.json" \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --chrome-flags="--headless=new --no-sandbox"
+          done
+      - name: Scores
+        run: |
+          node --input-type=module -e '
+            import { readdirSync, readFileSync, appendFileSync } from "node:fs";
+            const rows = []; let low = false;
+            for (const file of readdirSync("reports")) {
+              const report = JSON.parse(readFileSync(`reports/${file}`, "utf8"));
+              const scores = Object.values(report.categories).map((c) => Math.round(c.score * 100));
+              if (scores.some((s) => s < 95)) low = true;
+              rows.push(`| ${report.finalDisplayedUrl.replace("https://ridamagrawal.com", "")} | ${scores.join(" | ")} |`);
+            }
+            const table = ["### Lighthouse (mobile)", "", "| Page | Performance | Accessibility | Best practices | SEO |", "| --- | --- | --- | --- | --- |", ...rows].join("\n");
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, table + "\n");
+            console.log(table);
+            if (low) { console.log("::error::A Lighthouse score is below 95."); process.exitCode = 1; }
+          '
