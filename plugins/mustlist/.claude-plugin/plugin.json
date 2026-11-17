@@ -1,0 +1,10 @@
+{
+  "name": "mustlist",
+  "version": "0.1.0",
+  "description": "Reviewed \"build it properly\" cards for AI coding agents: the Mustlist MCP server plus a skill that makes Claude check the card before building a feature.",
+  "author": { "name": "Ridam Agrawal", "url": "https://github.com/RIDAM7" },
+  "homepage": "https://ridamagrawal.com/library",
+  "repository": "https://github.com/RIDAM7/mustlist",
+  "license": "MIT",
+  "keywords": ["checklists", "security", "best-practices", "mcp", "nextjs", "postgres"]
+}

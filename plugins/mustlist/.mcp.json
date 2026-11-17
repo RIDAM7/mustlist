@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mustlist": {
+      "type": "http",
+      "url": "https://ridamagrawal.com/library/mcp"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "mustlist",
+  "description": "Mustlist: reviewed \"build it properly\" cards for AI coding agents.",
+  "owner": { "name": "Ridam Agrawal", "url": "https://github.com/RIDAM7" },
+  "plugins": [
+    {
+      "name": "mustlist",
+      "source": "./plugins/mustlist",
+      "description": "Before building auth, payment webhooks, uploads, rate limiting, caching, jobs or email, Claude looks up the reviewed Mustlist card and follows its checklist and verify checks.",
+      "category": "development",
+      "tags": ["checklists", "security", "best-practices", "mcp"]
+    }
+  ]
+}
