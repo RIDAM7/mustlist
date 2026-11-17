@@ -6,8 +6,11 @@ import * as z from 'zod';
 import { stackTitle } from '@mustlist/schema/site';
 import { getAuth } from '@/lib/auth';
 import { topicName } from '@/lib/topics';
+import { appWritesEnabled } from './github/app';
+import * as proposals from './github/proposals';
 import * as gh from './github/write';
 import { COMMUNITY_TAG } from './load';
+import { cardProblems, prepareSubmission } from './proposal-checks';
 
 /**
  * Server Actions for the community pages (D-021 step B). Each one checks the
@@ -209,4 +212,101 @@ export async function submitReview(
     const review = await gh.submitReview(token, proposal, REVIEW_EVENTS[kind], body);
     return { url: review.url };
   });
+}
+
+// --- Proposals from the editor (step C) ----------------------------------------
+
+const submitInput = z.object({
+  topic: slug,
+  stack: slug,
+  mode: z.enum(['new', 'change']),
+  markdown: z.string().min(1).max(60_000, 'The card is too long.'),
+  heading: text(200, 'a title'),
+  note: z.string().trim().max(500, 'Keep the note under 500 characters.'),
+  request: requestNumber.nullable(),
+});
+
+/**
+ * Opens a proposal (a pull request) from the editor, or adds a revision to the
+ * signed-in person's open proposal for the same card.
+ */
+export async function submitProposal(
+  input: z.infer<typeof submitInput>,
+): Promise<ActionResult<{ number: number; url: string; updated: boolean }>> {
+  if (!appWritesEnabled)
+    return { ok: false, error: 'Sending proposals from the site is not set up yet.' };
+  const parsed = submitInput.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const { topic, stack, mode, markdown, heading, note, request } = parsed.data;
+  const cardId = `${topic}/${stack}`;
+  return write(async (token) => {
+    const me = await proposals.viewerIdentity(token);
+    const prepared = prepareSubmission(cardId, markdown, mode, me.login);
+    if (prepared.problems.length > 0) {
+      throw new gh.GitHubWriteError(
+        `Fix these first: ${prepared.problems.slice(0, 3).join(' · ')}`,
+      );
+    }
+    return proposals.submitProposal(token, {
+      cardId,
+      markdown: prepared.text,
+      mode,
+      heading,
+      note,
+      request,
+    });
+  });
+}
+
+// --- Accept and field comments (step D) -----------------------------------------
+
+const acceptInput = z.object({
+  proposal: requestNumber,
+  level: z.enum(['seed', 'community']),
+});
+
+/** Maintainers: approve, promote to Verified and merge once the checks pass. */
+export async function acceptProposal(
+  input: z.infer<typeof acceptInput>,
+): Promise<ActionResult<{ merging: 'auto' | 'merged' | 'waiting'; cardId: string }>> {
+  const parsed = acceptInput.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return write((token) =>
+    proposals.acceptProposal(token, {
+      number: parsed.data.proposal,
+      level: parsed.data.level,
+      date: new Date().toISOString().slice(0, 10),
+      validate: cardProblems,
+    }),
+  );
+}
+
+const fieldInput = z.object({
+  proposal: requestNumber,
+  field: z.enum([
+    'basics',
+    'checklist',
+    'decisions',
+    'options',
+    'versions',
+    'verify',
+    'sources',
+    'body',
+  ]),
+  body: text(10_000, 'a comment'),
+});
+
+/** A review comment on one field of the card, on its lines in the file. */
+export async function commentOnField(
+  input: z.infer<typeof fieldInput>,
+): Promise<ActionResult<{ url: string }>> {
+  const parsed = fieldInput.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return write((token) =>
+    proposals.commentOnField(token, {
+      number: parsed.data.proposal,
+      field: parsed.data.field,
+      body: parsed.data.body,
+    }),
+  );
 }

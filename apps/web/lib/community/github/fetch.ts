@@ -190,9 +190,14 @@ const PULLS_QUERY = /* GraphQL */ `
               }
               comments(first: 30) {
                 nodes {
+                  id
                   path
                   line
                   body
+                  createdAt
+                  author {
+                    login
+                  }
                 }
               }
             }

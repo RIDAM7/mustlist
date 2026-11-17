@@ -37,6 +37,12 @@ function Snippet({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** The Claude Code plugin lives in this repository's marketplace (.claude-plugin/). */
+const PLUGIN_COMMANDS = [
+  '/plugin marketplace add RIDAM7/mustlist',
+  '/plugin install mustlist@mustlist',
+].join('\n');
+
 function McpPanel({ mcpUrl }: { mcpUrl: string }) {
   const setups = clientSetups(mcpUrl);
   const [client, setClient] = useState<ClientSetup['id']>('claude');
@@ -66,6 +72,16 @@ function McpPanel({ mcpUrl }: { mcpUrl: string }) {
         ))}
       </div>
       <Snippet label={setup.where} value={setup.remote} />
+      {setup.id === 'claude' && (
+        <details className="t-sm">
+          <summary className="muted cursor-pointer">
+            Or install the Claude Code plugin (the server plus a skill that checks the card first)
+          </summary>
+          <div className="mt-3 flex flex-col gap-3">
+            <Snippet label="In Claude Code" value={PLUGIN_COMMANDS} />
+          </div>
+        </details>
+      )}
       <details className="t-sm">
         <summary className="muted cursor-pointer">
           Run it on your machine instead (works offline)

@@ -7,12 +7,14 @@ import type {
   Approval,
   CheckRun,
   Comment,
+  FieldChange,
   Person,
   Proposal,
   Request,
   Review,
   TimelineStep,
 } from '../types';
+import { fieldOf, proposerOf } from '../markers';
 import { diffCards } from './card-diff';
 
 /**
@@ -69,7 +71,16 @@ export interface GhReview {
   state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING';
   body: string;
   submittedAt: string | null;
-  comments: { nodes: { path: string; line: number | null; body: string }[] };
+  comments: {
+    nodes: {
+      id?: string;
+      path: string;
+      line: number | null;
+      body: string;
+      createdAt?: string;
+      author?: GhActor | null;
+    }[];
+  };
 }
 
 export interface GhPullRequest {
@@ -364,10 +375,15 @@ function proposalSummary(body: string): string {
   return readFormField(body, 'What this changes') ?? stripComments(body);
 }
 
+/** Who proposed it: the site's app opens pull requests for people and names them in the body. */
+const proposerOfPr = (pr: GhPullRequest) => proposerOf(pr.body, login(pr.author));
+
 function approvalsOf(pr: GhPullRequest): Approval[] {
   const latest = new Map<string, GhReview['state']>();
+  const proposer = proposerOfPr(pr).toLowerCase();
   for (const review of pr.reviews?.nodes ?? []) {
     if (!review.author || review.state === 'PENDING' || review.state === 'COMMENTED') continue;
+    if (review.author.login.toLowerCase() === proposer) continue;
     latest.set(review.author.login, review.state);
   }
   const approvals: Approval[] = [];
@@ -399,10 +415,12 @@ function reviewsOf(pr: GhPullRequest): Review[] {
             ? 'changes'
             : 'comment',
       body: review.body.trim(),
-      notes: review.comments.nodes.map((comment) => ({
-        field: comment.line ? `${comment.path} · line ${comment.line}` : comment.path,
-        text: comment.body,
-      })),
+      notes: review.comments.nodes
+        .filter((comment) => !fieldOf(comment.body).field)
+        .map((comment) => ({
+          field: comment.line ? `${comment.path} · line ${comment.line}` : comment.path,
+          text: comment.body,
+        })),
     }))
     .sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -416,7 +434,7 @@ function timelineOf(
   const steps: (TimelineStep & { at: string })[] = [
     {
       label: 'Opened',
-      meta: `@${login(pr.author)} · ${formatShortDate(pr.createdAt)}`,
+      meta: `@${proposerOfPr(pr)} · ${formatShortDate(pr.createdAt)}`,
       state: 'done',
       at: pr.createdAt,
     },
@@ -472,8 +490,8 @@ function timelineOf(
       label: 'Accepted',
       meta:
         checks === 'passing'
-          ? 'Needs 2 approvals, 1 from a maintainer'
-          : 'Needs passing checks and 2 approvals',
+          ? "Needs a maintainer's approval (seed) or 2 approvals"
+          : "Needs passing checks and a maintainer's approval",
       state: 'next',
       at: '',
     });
@@ -481,6 +499,33 @@ function timelineOf(
   return steps.map(({ at, ...step }) => {
     void at;
     return step;
+  });
+}
+
+/** Review comments the site posted on a field become that field's thread on the Changes tab. */
+function withThreads(changes: FieldChange[], pr: GhPullRequest): FieldChange[] {
+  const byField = new Map<string, Comment[]>();
+  for (const review of pr.reviews?.nodes ?? []) {
+    for (const comment of review.comments.nodes) {
+      const { field, text } = fieldOf(comment.body);
+      if (!field) continue;
+      byField.set(field, [
+        ...(byField.get(field) ?? []),
+        {
+          id: comment.id ?? `${review.id}-${field}-${byField.get(field)?.length ?? 0}`,
+          author: login(comment.author ?? review.author),
+          date: comment.createdAt ?? review.submittedAt ?? '',
+          body: text.trim(),
+        },
+      ]);
+    }
+  }
+  if (byField.size === 0) return changes;
+  return changes.map((change) => {
+    const comments = byField.get(change.id);
+    if (!comments) return change;
+    comments.sort((a, b) => a.date.localeCompare(b.date));
+    return { ...change, thread: { field: change.name, comments } };
   });
 }
 
@@ -525,7 +570,7 @@ export function mapPullRequest(pr: GhPullRequest, context: ProposalContext): Pro
     title: pr.title,
     topic: file.topic,
     stack: file.stack,
-    author: login(pr.author),
+    author: proposerOfPr(pr),
     opened: pr.createdAt,
     updated: pr.updatedAt,
     status,
@@ -540,7 +585,7 @@ export function mapPullRequest(pr: GhPullRequest, context: ProposalContext): Pro
     timeline: timelineOf(pr, status, checks, revisions),
     checkRuns: checkRuns(lastCommit?.statusCheckRollup?.contexts.nodes ?? []),
     checkedAt: lastCommit?.committedDate ?? pr.updatedAt,
-    changes: diff.changes,
+    changes: withThreads(diff.changes, pr),
     changeTotals: diff.totals,
     reviews: reviewsOf(pr),
     url: pr.url,
@@ -583,7 +628,7 @@ export function activityFrom(
   for (const pr of pulls) {
     if (!proposalNumbers.has(pr.number)) continue;
     const target = `proposal:${pr.number}`;
-    events.push({ actor: login(pr.author), verb: 'opened', date: pr.createdAt, target });
+    events.push({ actor: proposerOfPr(pr), verb: 'opened', date: pr.createdAt, target });
     for (const review of pr.reviews?.nodes ?? []) {
       if (!review.submittedAt) continue;
       const verb =

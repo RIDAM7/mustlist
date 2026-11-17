@@ -16,11 +16,19 @@ const nextConfig: NextConfig = {
   // made-up handles). A flag, never the token itself.
   env: {
     NEXT_PUBLIC_MUSTLIST_AVATARS: process.env.MUSTLIST_GITHUB_TOKEN ? 'github' : '',
+    // Proposals from the editor open pull requests through the GitHub App (a flag, never the key).
+    NEXT_PUBLIC_MUSTLIST_SITE_PROPOSALS:
+      process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY ? '1' : '',
   },
   cacheComponents: true,
   partialPrefetching: true,
   // Workspace packages ship TypeScript source.
-  transpilePackages: ['@mustlist/schema', '@mustlist/build', '@mustlist/mcp'],
+  transpilePackages: [
+    '@mustlist/schema',
+    '@mustlist/build',
+    '@mustlist/mcp',
+    '@mustlist/validator',
+  ],
   // Pages are prerendered, but unknown URLs still read dist/ at request time.
   outputFileTracingRoot: path.join(import.meta.dirname, '..', '..'),
   outputFileTracingIncludes: { '/*': ['../../dist/**/*'] },

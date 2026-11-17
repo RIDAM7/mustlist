@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { useToast } from '@/components/toast';
 import { Mark } from '@/components/mark';
@@ -7,6 +9,7 @@ import { Avatar, Pill } from '@/components/ui';
 import { useViewer } from '@/components/viewer';
 import { formatDateTime } from '@/lib/format';
 import { getPerson, roleLabel } from '@/lib/community';
+import { acceptProposal } from '@/lib/community/actions';
 import { CHECKS_STATE } from '@/lib/status';
 import { topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
@@ -64,7 +67,9 @@ export function ApprovalsBox() {
       </div>
       <div className="px-4 pb-1.5 pt-3.5">
         <ApprovalBar count={approvedCount} />
-        <p className="t-xs subtle mt-2">2 approvals needed, 1 from a maintainer.</p>
+        <p className="t-xs subtle mt-2">
+          Seed level: 1 maintainer. Community level: 2 approvals, 1 from a maintainer.
+        </p>
       </div>
       <ul className="pb-2 pt-1">
         {approvals.length === 0 && <li className="t-sm subtle px-4 py-2">No reviewers yet</li>}
@@ -109,7 +114,7 @@ function Requirement({ done, children }: { done: boolean; children: React.ReactN
 }
 
 export function AcceptBox({ size }: { size?: 'lg' }) {
-  const { mode, viewer } = useViewer();
+  const { mode, viewer, canSignIn } = useViewer();
   const toast = useToast();
   const {
     proposal,
@@ -121,7 +126,13 @@ export function AcceptBox({ size }: { size?: 'lg' }) {
     approve,
     accept,
   } = useProposalState();
-  if (mode === 'github') return <GitHubAcceptBox size={size} />;
+  if (mode === 'github') {
+    return canSignIn && viewer?.role === 'maintainer' ? (
+      <LiveAcceptBox size={size} />
+    ) : (
+      <GitHubAcceptBox size={size} />
+    );
+  }
   if (viewer?.role !== 'maintainer') return null;
 
   const viewerApproved = approvals.some(
@@ -182,6 +193,127 @@ export function AcceptBox({ size }: { size?: 'lg' }) {
       {accepted && (
         <p className="t-xs ok mt-2.5" role="status">
           Accepted · card is now Verified.
+        </p>
+      )}
+    </section>
+  );
+}
+
+type Level = 'seed' | 'community';
+
+const LEVELS: { id: Level; name: string; rule: string }[] = [
+  { id: 'seed', name: 'Seed', rule: '1 maintainer, with a sample app' },
+  { id: 'community', name: 'Community', rule: '2 approvals, 1 from a maintainer' },
+];
+
+/**
+ * GitHub mode, signed in as a maintainer (step D): one click approves, marks the
+ * card Verified on the proposal's branch, and merges once the checks pass.
+ */
+function LiveAcceptBox({ size }: { size?: 'lg' }) {
+  const { viewer, promptSignIn } = useViewer();
+  const toast = useToast();
+  const router = useRouter();
+  const { proposal, approvals, approvedCount, accepted, status } = useProposalState();
+  const viewerApproved = approvals.some(
+    (a) => a.handle === viewer?.handle && a.state === 'approved',
+  );
+  const own = proposal.author === viewer?.handle;
+  const countWithMe = approvedCount + (viewerApproved || own ? 0 : 1);
+  const [level, setLevel] = useState<Level>(countWithMe >= 2 ? 'community' : 'seed');
+  const [busy, setBusy] = useState(false);
+  if (status === 'closed') return null;
+
+  const failing = proposal.checks === 'failing';
+  const enough = level === 'seed' || countWithMe >= 2;
+  const ready = !failing && enough && !accepted && !busy;
+  const version = proposal.toVersion ?? proposal.fromVersion;
+
+  function accept() {
+    if (!ready) return;
+    setBusy(true);
+    void acceptProposal({ proposal: proposal.number, level }).then((result) => {
+      setBusy(false);
+      if (!result.ok) {
+        if (result.signIn) promptSignIn('accept proposals');
+        else toast(result.error);
+        return;
+      }
+      toast(
+        result.merging === 'merged'
+          ? 'Accepted · the card is now Verified'
+          : 'Accepted · it merges as Verified when the checks pass',
+      );
+      router.refresh();
+    });
+  }
+
+  return (
+    <section className="box p-4" aria-labelledby="ac-h">
+      <div className="flex items-center justify-between">
+        <h2 id="ac-h" className="t-sm strong">
+          Accept
+        </h2>
+        <span className="badge">Maintainers</span>
+      </div>
+      <fieldset className="mt-3 flex flex-col gap-1.5">
+        <legend className="t-xs subtle mb-1">Review level</legend>
+        {LEVELS.map((item) => (
+          <label key={item.id} className="t-sm flex min-h-9 items-start gap-2.5">
+            <input
+              type="radio"
+              name="accept-level"
+              className="mt-[3px] accent-[var(--accent)]"
+              checked={level === item.id}
+              onChange={() => setLevel(item.id)}
+            />
+            <span>
+              <span className="strong">{item.name}</span>{' '}
+              <span className="subtle">· {item.rule}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      <ul className="t-sm mt-3 flex flex-col gap-1.5">
+        <Requirement done={!failing}>
+          {proposal.checks === 'running'
+            ? 'Checks running · merges when they pass'
+            : 'Checks passing'}
+        </Requirement>
+        <Requirement done={enough}>
+          {level === 'seed'
+            ? own
+              ? 'You proposed it, as a maintainer'
+              : viewerApproved
+                ? 'Your approval'
+                : 'Your approval (added when you accept)'
+            : `2 approvals (${Math.min(countWithMe, 2)} of 2, with yours)`}
+        </Requirement>
+      </ul>
+      <div className="panel t-xs muted mt-3.5 px-3 py-2.5">
+        Result: {topicName(proposal.topic)} → <span className="strong text-fg">Verified</span>
+        {version && (
+          <>
+            {' '}
+            · <span className="mono">v{version}</span>
+          </>
+        )}
+      </div>
+      <button
+        type="button"
+        className={cn(
+          'btn btn-primary mt-3 w-full',
+          size === 'lg' && 'btn-lg',
+          !ready && 'btn-disabled',
+        )}
+        aria-disabled={!ready}
+        onClick={accept}
+      >
+        {busy ? 'Accepting…' : viewerApproved || own ? 'Accept proposal' : 'Approve and accept'}
+      </button>
+      {accepted && (
+        <p className="t-xs ok mt-2.5" role="status">
+          Accepted.
         </p>
       )}
     </section>
@@ -260,7 +392,9 @@ export function PhoneStatusBoxes() {
           <ApprovalBar count={approvedCount} className="mt-2" />
         </div>
       </div>
-      <p className="t-xs subtle">2 approvals needed, 1 from a maintainer.</p>
+      <p className="t-xs subtle">
+        Seed: 1 maintainer · Community: 2 approvals, 1 from a maintainer.
+      </p>
     </>
   );
 }

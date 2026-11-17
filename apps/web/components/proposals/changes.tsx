@@ -4,10 +4,12 @@ import { useId, useState } from 'react';
 import { LENS_TITLES } from '@mustlist/schema/constants';
 import { Icon } from '@/components/icons';
 import { Avatar, CodeText } from '@/components/ui';
+import { useToast } from '@/components/toast';
 import { useViewer } from '@/components/viewer';
 import type { Comment, DiffRow, FieldChange, FieldThread } from '@/lib/community';
 import { formatShortDate, splitCode } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { commentOnField } from '@/lib/community/actions';
 import { githubLinks } from '@/lib/community/links';
 import { goToSection } from '@/lib/scroll';
 import { useProposalState } from './proposal-state';
@@ -204,25 +206,49 @@ function Thread({ thread, extra }: { thread?: FieldThread; extra: Comment[] }) {
   );
 }
 
+type FieldId = Parameters<typeof commentOnField>[0]['field'];
+
 function FieldBox({ field, inlineCaption }: { field: FieldChange; inlineCaption: boolean }) {
-  const { viewer, requireViewer } = useViewer();
+  const { mode, viewer, requireViewer, promptSignIn } = useViewer();
+  const toast = useToast();
+  const [sending, setSending] = useState(false);
   const { proposal, fieldComments, addFieldComment, now } = useProposalState();
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputId = useId();
   const extra = fieldComments[field.id] ?? [];
 
-  function submit() {
-    const body = draft.trim();
-    if (!body || !viewer) return;
+  function addLocal(body: string, date: string) {
+    if (!viewer) return;
     addFieldComment(field.id, {
       id: `local-${field.id}-${extra.length + 1}`,
       author: viewer.handle,
-      date: now,
+      date,
       body,
     });
     setDraft('');
     setComposing(false);
+  }
+
+  function submit() {
+    const body = draft.trim();
+    if (!body || !viewer || sending) return;
+    if (mode !== 'github') {
+      addLocal(body, now);
+      return;
+    }
+    setSending(true);
+    void commentOnField({ proposal: proposal.number, field: field.id as FieldId, body }).then(
+      (result) => {
+        setSending(false);
+        if (!result.ok) {
+          if (result.signIn) promptSignIn('comment');
+          else toast(result.error);
+          return;
+        }
+        addLocal(body, new Date().toISOString());
+      },
+    );
   }
 
   return (

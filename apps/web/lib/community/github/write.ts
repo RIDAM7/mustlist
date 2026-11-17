@@ -39,7 +39,7 @@ const repoVars = { owner: REPO.owner, name: REPO.name };
 export async function getDiscussion(
   token: string,
   number: number,
-): Promise<{ id: string; upvoted: boolean; upvotes: number; closed: boolean }> {
+): Promise<{ id: string; upvoted: boolean; upvotes: number; closed: boolean; category: string }> {
   const data = await gql<{
     repository: {
       discussion: {
@@ -47,13 +47,14 @@ export async function getDiscussion(
         viewerHasUpvoted: boolean;
         upvoteCount: number;
         closed: boolean;
+        category: { slug: string } | null;
       } | null;
     };
   }>(
     token,
     `query($owner: String!, $name: String!, $number: Int!) {
       repository(owner: $owner, name: $name) {
-        discussion(number: $number) { id viewerHasUpvoted upvoteCount closed }
+        discussion(number: $number) { id viewerHasUpvoted upvoteCount closed category { slug } }
       }
     }`,
     { ...repoVars, number },
@@ -65,6 +66,7 @@ export async function getDiscussion(
     upvoted: discussion.viewerHasUpvoted,
     upvotes: discussion.upvoteCount,
     closed: discussion.closed,
+    category: discussion.category?.slug ?? '',
   };
 }
 

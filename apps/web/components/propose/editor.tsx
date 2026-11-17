@@ -8,6 +8,7 @@ import { Menu } from '@/components/overlay';
 import { useCopy, useToast } from '@/components/toast';
 import { Pill, SampleBanner } from '@/components/ui';
 import { openOnGitHub, useViewer } from '@/components/viewer';
+import { submitProposal } from '@/lib/community/actions';
 import { githubLinks } from '@/lib/community/links';
 import { stackName, topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
@@ -31,8 +32,13 @@ import { SubmitDialog } from './submit-dialog';
 /**
  * The propose editor (design board 31): a form, never raw markdown. One section
  * at a time, live checks on the right, autosave to this browser, and a submit
- * dialog (board 32). Build step C turns "Submit for review" into a pull request.
+ * dialog (board 32). With the GitHub App set up, "Submit for review" opens a
+ * pull request for the signed-in person (step C); otherwise it copies the card
+ * and opens GitHub's editor.
  */
+
+/** Set at build time when the GitHub App can open pull requests (a flag, never the key). */
+const SITE_PROPOSALS = process.env.NEXT_PUBLIC_MUSTLIST_SITE_PROPOSALS === '1';
 
 export interface EditorProps {
   initial: Draft;
@@ -120,7 +126,7 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
   const router = useRouter();
   const toast = useToast();
   const copy = useCopy();
-  const { mode: source, requireViewer } = useViewer();
+  const { mode: source, canSignIn, requireViewer, promptSignIn } = useViewer();
   const [stored] = useState(() => readStored(storageKey));
   const [draft, setDraftState] = useState<Draft>(() => stored?.draft ?? initial);
   const [savedAt, setSavedAt] = useState<{ at: Date; restored: boolean } | null>(() =>
@@ -131,6 +137,7 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
   );
   const [view, setView] = useState<'edit' | 'preview'>('edit');
   const [submitting, setSubmitting] = useState(false);
+  const [sending, setSending] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<string | null>(null);
   const touched = useRef(false);
@@ -196,7 +203,41 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
   const heading = `${mode === 'new' ? 'New card' : 'Change'}: ${topicLabel} · ${stackLabel}`;
   const hasErrors = report.errors > 0;
 
-  function submit() {
+  function submit(note: string) {
+    if (source === 'github' && canSignIn && SITE_PROPOSALS) {
+      requireViewer('submit a proposal', () => {
+        setSending(true);
+        void submitProposal({
+          topic: draft.topic,
+          stack: draft.stack,
+          mode,
+          markdown: serializeCard(draft),
+          heading,
+          note: note.trim(),
+          request: draft.request,
+        }).then((result) => {
+          setSending(false);
+          if (!result.ok) {
+            if (result.signIn) promptSignIn('submit a proposal');
+            else toast(result.error);
+            return;
+          }
+          setSubmitting(false);
+          try {
+            localStorage.removeItem(storageKey);
+          } catch {
+            // Storage blocked: the old draft stays in this browser.
+          }
+          toast(
+            result.updated
+              ? `Proposal #${result.number} updated`
+              : `Proposal #${result.number} opened`,
+          );
+          router.push(`/proposals/${result.number}`);
+        });
+      });
+      return;
+    }
     setSubmitting(false);
     if (source === 'github') {
       // Proposals are pull requests: copy the card file, then open GitHub's editor for it.
@@ -390,6 +431,8 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
         draft={draft}
         heading={heading}
         report={report}
+        sending={sending}
+        viaGitHubEditor={source === 'github' && !(canSignIn && SITE_PROPOSALS)}
         onClose={() => setSubmitting(false)}
         onSubmit={submit}
       />

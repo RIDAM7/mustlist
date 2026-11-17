@@ -4,7 +4,6 @@ import { useId, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { Modal } from '@/components/overlay';
 import { useCopy } from '@/components/toast';
-import { useViewer } from '@/components/viewer';
 import { plural } from '@/lib/format';
 import { topicName } from '@/lib/topics';
 import { cn } from '@/lib/utils';
@@ -19,6 +18,8 @@ export function SubmitDialog({
   draft,
   heading,
   report,
+  sending = false,
+  viaGitHubEditor,
   onClose,
   onSubmit,
 }: {
@@ -27,10 +28,13 @@ export function SubmitDialog({
   /** "New card: Background jobs · Next.js + Postgres" */
   heading: string;
   report: CheckReport;
+  /** The proposal is on its way to GitHub. */
+  sending?: boolean;
+  /** Submitting copies the card and opens GitHub's editor (no pull request from the site). */
+  viaGitHubEditor: boolean;
   onClose: () => void;
   onSubmit: (note: string) => void;
 }) {
-  const { mode: source } = useViewer();
   const titleId = useId();
   const noteId = useId();
   const [note, setNote] = useState('');
@@ -113,8 +117,16 @@ export function SubmitDialog({
             className="mt-[3px] accent-[var(--accent)]"
           />
           <span>
-            I wrote this card myself and every link is to a primary source.{' '}
-            <span className="subtle">Card text is licensed CC BY 4.0.</span>
+            I wrote this card myself, every link is to a primary source, and I sign off under the{' '}
+            <a
+              href="https://developercertificate.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link"
+            >
+              Developer Certificate of Origin
+            </a>
+            . <span className="subtle">Card text is licensed CC BY 4.0.</span>
           </span>
         </label>
       </div>
@@ -132,13 +144,15 @@ export function SubmitDialog({
         </button>
         <button
           type="button"
-          className={cn('btn btn-primary', (!passing || !agreed) && 'btn-disabled')}
-          aria-disabled={!passing || !agreed}
+          className={cn('btn btn-primary', (!passing || !agreed || sending) && 'btn-disabled')}
+          aria-disabled={!passing || !agreed || sending}
           onClick={() => {
-            if (passing && agreed) onSubmit(note);
+            if (passing && agreed && !sending) onSubmit(note);
           }}
         >
-          {source === 'github' ? (
+          {sending ? (
+            'Sending…'
+          ) : viaGitHubEditor ? (
             <>
               Continue on GitHub
               <Icon name="external" size="sm" />
