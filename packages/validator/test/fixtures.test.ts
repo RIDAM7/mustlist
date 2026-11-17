@@ -4,7 +4,7 @@ import { RULE_IDS } from '../src/types';
 import { createCardContext, validateCards } from '../src/validate';
 import { badFixtureRules, fixtureInput, goodInputs } from './helpers';
 
-/** Rules with no fixture: status-guard is not implemented yet. */
+/** Rules with no fixture: status-guard compares two versions of a card (see status-guard.test.ts). */
 const NOT_IMPLEMENTED = ['status-guard'];
 
 describe('good fixtures', () => {

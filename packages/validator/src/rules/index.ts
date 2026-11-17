@@ -15,7 +15,7 @@ import { slugRule } from './slug';
 
 /**
  * Rules run by `pnpm validate`. `links` runs only with `--links` (see links.ts),
- * and `status-guard` is not implemented yet (see status-guard.ts).
+ * and `status-guard` compares a PR with its base, so `scripts/pr-checks.ts` runs it.
  */
 export const DEFAULT_RULES: readonly Rule[] = [
   schemaRule,

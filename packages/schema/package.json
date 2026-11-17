@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./constants": "./src/constants.ts",
+    "./promote": "./src/promote.ts",
     "./site": "./src/site.ts",
     "./types": "./src/card-json.ts"
   },
