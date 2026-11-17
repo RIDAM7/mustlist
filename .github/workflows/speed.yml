@@ -44,6 +44,10 @@ jobs:
               const metrics = ["first-contentful-paint", "largest-contentful-paint", "total-blocking-time", "cumulative-layout-shift", "speed-index"].map((id) => `${a[id].title} ${a[id].displayValue}`);
               const weak = Object.values(a).filter((x) => x.score !== null && x.score < 0.9 && ["binary", "numeric", "metricSavings"].includes(x.scoreDisplayMode)).map((x) => `${x.id}${x.displayValue ? ` (${x.displayValue})` : ""}`);
               details.push(`**${page}**: ${metrics.join(" · ")}`, "", `Needs work: ${weak.join(", ") || "nothing"}`, "");
+              if (scores[0] < 95) {
+                const top = (id, key, n = 4) => (a[id]?.details?.items ?? []).slice(0, n).map((item) => `${String(item.url ?? item.groupLabel ?? item.group ?? "").replace(/^https:\/\/ridamagrawal\.com/, "")} ${Math.round(item[key] ?? 0)} ms`).join("; ");
+                details.push(`DOM: ${a["dom-size"]?.displayValue} · Main thread: ${top("mainthread-work-breakdown", "duration")} · Scripts: ${top("bootup-time", "total")} · Long tasks: ${top("long-tasks", "duration", 6)}`, "");
+              }
             }
             const table = ["### Lighthouse (mobile)", "", "| Page | Performance | Accessibility | Best practices | SEO |", "| --- | --- | --- | --- | --- |", ...rows, "", ...details].join("\n");
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, table + "\n");
