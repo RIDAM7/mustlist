@@ -2,6 +2,11 @@ name: Speed
 
 # Weekly Lighthouse run (mobile) on the live site. The job summary lists the
 # scores, and the run fails when a category drops below 95, so it shows up red.
+#
+# Each page runs three times and the median run counts, as Lighthouse's docs
+# advise. A warm-up run on a page that isn't scored goes first: the first Chrome
+# start on a fresh runner is slow, and it used to mark down whichever page ran
+# first (the home page scored 88 run first and 100 run last in the same job).
 on:
   schedule:
     - cron: '41 6 * * 1' # Mondays 06:41 UTC
@@ -21,21 +26,32 @@ jobs:
           node-version: lts/*
       - name: Run Lighthouse
         run: |
-          mkdir -p reports
-          for path in "" "/auth/nextjs-postgres" "/connect"; do
-            name=$(echo "home$path" | tr '/' '-')
-            npx -y lighthouse@13.6.0 "https://ridamagrawal.com/library$path" \
-              --quiet --output=json --output-path="reports/$name.json" \
+          run_lighthouse() {
+            npx -y lighthouse@13.6.0 "https://ridamagrawal.com/library$1" \
+              --quiet --output=json --output-path="$2" \
               --only-categories=performance,accessibility,best-practices,seo \
               --chrome-flags="--headless=new --no-sandbox"
+          }
+          mkdir -p reports
+          run_lighthouse /how-it-works warm-up.json
+          for path in "" "/auth/nextjs-postgres" "/connect"; do
+            name=$(echo "home$path" | tr '/' '-')
+            for run in 1 2 3; do run_lighthouse "$path" "reports/$name.$run.json"; done
           done
       - name: Scores
         run: |
           node --input-type=module -e '
-            import { readdirSync, readFileSync, appendFileSync } from "node:fs";
+            import { existsSync, readdirSync, readFileSync, appendFileSync } from "node:fs";
+            const read = (file) => JSON.parse(readFileSync(file, "utf8"));
+            const perf = (report) => Math.round(report.categories.performance.score * 100);
+            const pages = new Map();
+            for (const file of readdirSync("reports").sort()) {
+              const name = file.replace(/\.\d+\.json$/, "");
+              pages.set(name, [...(pages.get(name) ?? []), read(`reports/${file}`)]);
+            }
             const rows = []; const details = []; let low = false;
-            for (const file of readdirSync("reports")) {
-              const report = JSON.parse(readFileSync(`reports/${file}`, "utf8"));
+            for (const runs of pages.values()) {
+              const report = [...runs].sort((x, y) => perf(x) - perf(y))[Math.floor(runs.length / 2)];
               const scores = Object.values(report.categories).map((c) => Math.round(c.score * 100));
               if (scores.some((s) => s < 95)) low = true;
               const page = report.finalDisplayedUrl.replace("https://ridamagrawal.com", "");
@@ -43,12 +59,13 @@ jobs:
               const a = report.audits;
               const metrics = ["first-contentful-paint", "largest-contentful-paint", "total-blocking-time", "cumulative-layout-shift", "speed-index"].map((id) => `${a[id].title} ${a[id].displayValue}`);
               const weak = Object.values(a).filter((x) => x.score !== null && x.score < 0.9 && ["binary", "numeric", "metricSavings"].includes(x.scoreDisplayMode)).map((x) => `${x.id}${x.displayValue ? ` (${x.displayValue})` : ""}`);
-              details.push(`**${page}**: ${metrics.join(" · ")}`, "", `Needs work: ${weak.join(", ") || "nothing"}`, "");
+              details.push(`**${page}**: ${metrics.join(" · ")}`, "", `Performance per run: ${runs.map(perf).join(", ")} (the median run is shown)`, "", `Needs work: ${weak.join(", ") || "nothing"}`, "");
               if (scores[0] < 95) {
                 const top = (id, key, n = 4) => (a[id]?.details?.items ?? []).slice(0, n).map((item) => `${String(item.url ?? item.groupLabel ?? item.group ?? "").replace(/^https:\/\/ridamagrawal\.com/, "")} ${Math.round(item[key] ?? 0)} ms`).join("; ");
                 details.push(`DOM: ${a["dom-size"]?.displayValue} · Main thread: ${top("mainthread-work-breakdown", "duration")} · Scripts: ${top("bootup-time", "total")} · Long tasks: ${top("long-tasks", "duration", 6)}`, "");
               }
             }
+            if (existsSync("warm-up.json")) details.push(`Warm-up run, not scored: performance ${perf(read("warm-up.json"))}`, "");
             const table = ["### Lighthouse (mobile)", "", "| Page | Performance | Accessibility | Best practices | SEO |", "| --- | --- | --- | --- | --- |", ...rows, "", ...details].join("\n");
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, table + "\n");
             console.log(table);
