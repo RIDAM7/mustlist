@@ -6,7 +6,7 @@ import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { createMustlistServer, type Library, searchCards, techSlugs } from '@mustlist/mcp';
 import { clientSetups } from '@mustlist/mcp/clients';
 import pkg from '../package.json' with { type: 'json' };
-import { loadOnline, loadSnapshot, SITE, toLibrary } from './data';
+import { loadLive, loadSnapshot, SITE, toLibrary } from './data';
 import {
   addAgentsImport,
   cardsForTechs,
@@ -23,7 +23,7 @@ const MCP_URL = `${SITE}/library/mcp`;
 const HELP = `mustlist ${VERSION}: reviewed "build it properly" cards for AI coding agents
 
 Usage:
-  mustlist mcp [--online]            Run the MCP server over stdio (for your agent's config)
+  mustlist mcp [--offline]           Run the MCP server over stdio (for your agent's config)
   mustlist init [options]            Add a card index for this project to AGENTS.md
   mustlist search <query> [options]  Find cards from the terminal
 
@@ -41,7 +41,8 @@ search options:
   --json             Print JSON
 
 Common:
-  --online           Use the live cards (cached 24 h) instead of the bundled snapshot
+  --offline          Use only the cards bundled with this version (no network).
+                     By default the latest cards are fetched and cached for 24 h.
   -h, --help         Show this help
   -v, --version      Show the version
 
@@ -51,12 +52,12 @@ Cards: ${SITE}/library`;
 /** stdout is the MCP channel in `mcp` mode, so all messages go to stderr. */
 const log = (message: string) => process.stderr.write(`${message}\n`);
 
-async function getLibrary(online: boolean): Promise<Library> {
-  return toLibrary(online ? await loadOnline(log) : loadSnapshot());
+async function getLibrary(offline: boolean, refresh: 'wait' | 'background'): Promise<Library> {
+  return toLibrary(offline ? loadSnapshot() : await loadLive({ log, refresh }));
 }
 
-async function runMcp(online: boolean): Promise<void> {
-  const library = await getLibrary(online);
+async function runMcp(offline: boolean): Promise<void> {
+  const library = await getLibrary(offline, 'background');
   serveStdio(() => createMustlistServer(library, VERSION));
 }
 
@@ -68,10 +69,10 @@ async function runSearch(
     limit?: string;
     all?: boolean;
     json?: boolean;
-    online?: boolean;
+    offline?: boolean;
   },
 ): Promise<number> {
-  const library = await getLibrary(Boolean(options.online));
+  const library = await getLibrary(Boolean(options.offline), 'wait');
   const limit = options.limit ? Number(options.limit) : 5;
   if (!Number.isInteger(limit) || limit < 1 || limit > 10) {
     log('--limit must be a whole number from 1 to 10.');
@@ -127,10 +128,10 @@ async function runInit(options: {
   'dry-run'?: boolean;
   yes?: boolean;
   'no-claude-md'?: boolean;
-  online?: boolean;
+  offline?: boolean;
 }): Promise<number> {
   const projectDir = process.cwd();
-  const library = await getLibrary(Boolean(options.online));
+  const library = await getLibrary(Boolean(options.offline), 'wait');
   const techs = options.stack ? techSlugs(options.stack.split(',')) : detectTechs(projectDir);
   if (!techs.length) {
     log(
@@ -192,6 +193,8 @@ export async function main(argv: string[]): Promise<number> {
       args: argv,
       allowPositionals: true,
       options: {
+        offline: { type: 'boolean' },
+        // Live cards are the default since 0.2.0; --online is still accepted.
         online: { type: 'boolean' },
         stack: { type: 'string' },
         topic: { type: 'string' },
@@ -221,7 +224,7 @@ export async function main(argv: string[]): Promise<number> {
   }
   switch (command) {
     case 'mcp':
-      await runMcp(Boolean(values.online));
+      await runMcp(Boolean(values.offline));
       return 0;
     case 'init':
       return runInit(values);

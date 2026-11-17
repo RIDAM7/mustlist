@@ -16,7 +16,7 @@ The quickest setup needs no install, using the remote server:
 claude mcp add --transport http mustlist https://ridamagrawal.com/library/mcp
 ```
 
-Or run it on your machine over stdio. It works offline with the cards bundled in this package:
+Or run it on your machine over stdio:
 
 ```bash
 claude mcp add --transport stdio mustlist -- npx -y mustlist mcp
@@ -26,7 +26,7 @@ claude mcp add --transport stdio mustlist -- npx -y mustlist mcp
 { "mcpServers": { "mustlist": { "command": "npx", "args": ["-y", "mustlist", "mcp"] } } }
 ```
 
-Add `--online` to use the live cards. They are cached for 24 hours, and the bundled ones are used if the network fails.
+It fetches the latest cards once a day (one request, cached for 24 hours), so new and updated cards arrive without a package update. If the network fails it uses the cache, then the cards bundled in this package. Add `--offline` to use only the bundled cards.
 
 Setup for Cursor, VS Code, Codex CLI and Windsurf: [ridamagrawal.com/library/connect](https://ridamagrawal.com/library/connect?tab=mcp).
 
@@ -72,7 +72,7 @@ npx mustlist search login --stack nextjs,postgres --json
 
 ## Privacy
 
-There is no telemetry. In `--online` mode the CLI downloads the public cards from ridamagrawal.com. Nothing about your project leaves your machine.
+There is no telemetry. The CLI downloads the public cards from ridamagrawal.com at most once a day (never with `--offline`). Nothing about your project leaves your machine.
 
 ## Licences
 
