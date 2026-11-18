@@ -379,32 +379,70 @@ export async function acceptProposal(
     labels: [ACCEPTED_LABEL],
   });
 
-  // Merge once the checks pass on the promotion commit.
+  // Merge once the checks pass on the promotion commit. The squash commit is
+  // credited to the proposer's noreply address: without an explicit email,
+  // GitHub would use the merging maintainer's account email, which can be private.
+  const merge = {
+    id: pr.node_id,
+    headline: `${pr.title} (#${pr.number})`,
+    email: await noreplyEmail(userToken, proposer),
+  };
   try {
     await graphql(
       userToken,
       `
-        mutation ($id: ID!, $headline: String!) {
+        mutation ($id: ID!, $headline: String!, $email: String!) {
           enablePullRequestAutoMerge(
-            input: { pullRequestId: $id, mergeMethod: SQUASH, commitHeadline: $headline }
+            input: {
+              pullRequestId: $id
+              mergeMethod: SQUASH
+              commitHeadline: $headline
+              authorEmail: $email
+            }
           ) {
             clientMutationId
           }
         }
       `,
-      { id: pr.node_id, headline: `${pr.title} (#${pr.number})` },
+      merge,
     );
     return { merging: 'auto', cardId };
   } catch {
+    // Auto-merge is refused when the pull request can merge right now: merge it directly.
     try {
-      await rest(userToken, 'PUT', `${repoPath}/pulls/${input.number}/merge`, {
-        merge_method: 'squash',
-      });
+      await graphql(
+        userToken,
+        `
+          mutation ($id: ID!, $headline: String!, $email: String!) {
+            mergePullRequest(
+              input: {
+                pullRequestId: $id
+                mergeMethod: SQUASH
+                commitHeadline: $headline
+                authorEmail: $email
+              }
+            ) {
+              clientMutationId
+            }
+          }
+        `,
+        merge,
+      );
       return { merging: 'merged', cardId };
     } catch {
       return { merging: 'waiting', cardId };
     }
   }
+}
+
+/** `<id>+<login>@users.noreply.github.com`: GitHub's private commit address for a person. */
+async function noreplyEmail(token: string, login: string): Promise<string> {
+  const user = await rest<{ id: number; login: string }>(
+    token,
+    'GET',
+    `/users/${encodeURIComponent(login)}`,
+  );
+  return `${user.id}+${user.login}@users.noreply.github.com`;
 }
 
 async function graphql(
