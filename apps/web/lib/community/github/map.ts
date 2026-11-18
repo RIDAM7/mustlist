@@ -126,7 +126,13 @@ export function stripComments(markdown: string): string {
     previous = text;
     text = text.replace(/<!--[\s\S]*?-->/g, '');
   }
-  return text.replace(/<!--/g, '').trim();
+  // Removing a stray `<!--` can join its neighbours into a new one (`<!<!----`),
+  // so repeat this too until nothing changes.
+  for (let previous = ''; previous !== text;) {
+    previous = text;
+    text = text.replace(/<!--/g, '');
+  }
+  return text.trim();
 }
 
 /**

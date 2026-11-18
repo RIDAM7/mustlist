@@ -8,4 +8,9 @@ describe('stripComments', () => {
     expect(stripComments('<!<!-- -->-- hidden --> shown')).toBe('shown');
     expect(stripComments('text <!-- never closed')).toBe('text  never closed');
   });
+
+  it('leaves no comment opener, even one formed by a removal', () => {
+    expect(stripComments('<!<!----')).not.toContain('<!--');
+    expect(stripComments('a <!<!<!------ b')).not.toContain('<!--');
+  });
 });
