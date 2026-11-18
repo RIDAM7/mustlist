@@ -1908,15 +1908,11 @@
     min-width: 0;
     overflow-wrap: anywhere;
   }
+  /* Three per row when each tile fits "Any MCP client" on one line, else two. */
   .clients {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(max(8.5rem, 30%), 1fr));
     gap: 6px;
-  }
-  @media (max-width: 480px) {
-    .clients {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
   .client {
     display: flex;

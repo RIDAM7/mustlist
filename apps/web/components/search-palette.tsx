@@ -332,7 +332,12 @@ function SearchPalette({
                     <span className="t-xs subtle truncate">{result.meta}</span>
                   </span>
                   <Pill pill={result.pill} label={result.status} />
-                  {on && <Kbd>Enter</Kbd>}
+                  {/* Phones have no Enter key to press; the space goes to the title. */}
+                  {on && (
+                    <span className="max-sm:hidden">
+                      <Kbd>Enter</Kbd>
+                    </span>
+                  )}
                 </a>
               );
             })}

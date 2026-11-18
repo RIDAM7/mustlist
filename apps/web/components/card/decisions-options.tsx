@@ -102,14 +102,17 @@ export function DecisionsAndOptions({
                     <button
                       type="button"
                       aria-expanded={expanded}
-                      className="opt flex min-h-[52px] w-full cursor-pointer items-center justify-between px-4 py-0 text-left md:hidden"
+                      className="opt flex min-h-[52px] w-full cursor-pointer items-center justify-between gap-3 px-4 py-0 text-left md:hidden"
                       onClick={() => setOpenOption(expanded ? null : option.id)}
                     >
-                      <span className="flex flex-col py-3">
+                      <span className="flex min-w-0 flex-col py-3">
                         <span className="text-[15px] font-semibold">{option.name}</span>
                         {fits && <Pill {...LABEL_PILL.fits} className="mt-1.5 self-start" />}
                       </span>
-                      <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="subtle" />
+                      <Icon
+                        name={expanded ? 'chevronUp' : 'chevronDown'}
+                        className="subtle shrink-0"
+                      />
                     </button>
                   )}
                   <div

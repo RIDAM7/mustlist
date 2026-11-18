@@ -37,6 +37,19 @@ function setupsFor(mcpUrl: string): Record<BrandId, Setup> {
 }
 
 /** Home hero, right-hand side: the MCP URL and one-line setup per agent. */
+/** On a narrow screen the URL wraps after the domain, not mid-word ("li" / "brary"). */
+function breakAfterHost(url: string) {
+  const match = /^(https?:\/\/[^/]+\/)(.+)$/.exec(url);
+  if (!match) return url;
+  return (
+    <>
+      {match[1]}
+      <wbr />
+      {match[2]}
+    </>
+  );
+}
+
 export function AgentCard({ mcpUrl }: { mcpUrl: string }) {
   const [picked, setPicked] = useState<BrandId>('claude');
   const setups = setupsFor(mcpUrl);
@@ -55,7 +68,7 @@ export function AgentCard({ mcpUrl }: { mcpUrl: string }) {
         <div className="flex flex-col gap-1.5">
           <span className="label">MCP server URL</span>
           <div className="agent-url">
-            <code>{mcpUrl}</code>
+            <code>{breakAfterHost(mcpUrl)}</code>
             <CopyButton
               value={mcpUrl}
               className="btn btn-secondary btn-sm"

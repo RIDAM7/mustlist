@@ -264,14 +264,15 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
           style={MAX_WIDTH}
         >
           <div className="min-w-0 flex-1 basis-60">
-            <div className="crumbs">
+            {/* One line in the sticky header: a long card title ends in an ellipsis. */}
+            <div className="crumbs flex-nowrap">
               <Link href="/proposals">Proposals</Link>
               <span aria-hidden="true">/</span>
               <span>{mode === 'new' ? 'New card' : 'Change'}</span>
               {draft.request !== null && (
                 <>
                   <span aria-hidden="true">·</span>
-                  <Link href={`/requests/${draft.request}`} className="link">
+                  <Link href={`/requests/${draft.request}`} className="link shrink-0">
                     from request #{draft.request}
                   </Link>
                 </>
@@ -279,7 +280,11 @@ function Editor({ initial, storageKey, mode, cardTitle }: EditorProps) {
               {mode === 'change' && draft.cardId && (
                 <>
                   <span aria-hidden="true">·</span>
-                  <Link href={`/${draft.cardId}`} className="link">
+                  <Link
+                    href={`/${draft.cardId}`}
+                    className="link min-w-0 truncate"
+                    title={cardTitle ?? draft.cardId}
+                  >
                     {cardTitle ?? draft.cardId}
                   </Link>
                 </>
