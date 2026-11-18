@@ -3,12 +3,14 @@ import { parseCard, validateFrontmatter } from '@mustlist/schema';
 import type { CardJSON } from '@mustlist/schema/types';
 import { SITE_URL } from '@/lib/site';
 import { toneFor } from '../index';
-import { REPO, REQUESTS_CATEGORY } from '../links';
-import type { CommunityData, Proposal } from '../types';
+import { CARD_DISCUSSIONS_CATEGORY, REPO, REQUESTS_CATEGORY } from '../links';
+import { cardOf } from '../markers';
+import type { CardThread, CommunityData, Proposal } from '../types';
 import {
   activityFrom,
   cardFileOf,
   linkedRequests,
+  mapComment,
   mapDiscussion,
   mapPullRequest,
   peopleFrom,
@@ -293,13 +295,26 @@ export async function fetchCommunity({
   const category = repo.repository.discussionCategories.nodes.find(
     (c) => c.slug === REQUESTS_CATEGORY,
   );
+  const cardCategory = repo.repository.discussionCategories.nodes.find(
+    (c) => c.slug === CARD_DISCUSSIONS_CATEGORY,
+  );
   const people = peopleFrom(
     repo.repository.maintainers?.text ?? '',
     repo.repository.codeowners?.text ?? '',
     toneFor,
   );
 
-  const [discussions, allPulls] = await Promise.all([
+  const discussionsIn = (categoryId: string) =>
+    paged<GhDiscussion>(async (after) => {
+      const data = await graphql<{ repository: { discussions: Page<GhDiscussion> } }>(
+        token,
+        DISCUSSIONS_QUERY,
+        { ...vars, category: categoryId, after },
+      );
+      return data.repository.discussions;
+    });
+
+  const [discussions, allPulls, qa] = await Promise.all([
     category
       ? paged<GhDiscussion>(async (after) => {
           const data = await graphql<{ repository: { discussions: Page<GhDiscussion> } }>(
@@ -325,7 +340,20 @@ export async function fetchCommunity({
       );
       return data.repository.pullRequests;
     }),
+    cardCategory ? discussionsIn(cardCategory.id) : Promise.resolve([]),
   ]);
+
+  // Each card's Discussion tab: the oldest Q&A discussion marked for that card.
+  const cardThreads: Record<string, CardThread> = {};
+  for (const discussion of [...qa].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+    const cardId = cardOf(discussion.body);
+    if (!cardId || cardThreads[cardId] || !cardIds.includes(cardId)) continue;
+    cardThreads[cardId] = {
+      number: discussion.number,
+      url: discussion.url,
+      comments: discussion.comments.nodes.map(mapComment),
+    };
+  }
 
   const pulls = allPulls.filter((pr) => cardFileOf(pr));
   const cards = await readCards(token, pulls);
@@ -361,6 +389,7 @@ export async function fetchCommunity({
     fetchedAt: now,
     now,
     requestsEnabled: Boolean(category),
+    cardThreads,
     people,
     requests: discussions.map((d) => mapDiscussion(d, { cardIds, proposalsByRequest })),
     proposals,

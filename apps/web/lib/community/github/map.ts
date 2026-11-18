@@ -236,7 +236,7 @@ export function peopleFrom(
 
 /* ── Requests ───────────────────────────────────────────── */
 
-function mapComment(comment: GhComment): Comment {
+export function mapComment(comment: GhComment): Comment {
   return {
     id: comment.id,
     author: login(comment.author),

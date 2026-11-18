@@ -5,6 +5,7 @@
  *   opens pull requests for people, because GitHub needs write access to open
  *   one from a branch in this repository.
  * - `mustlist-field`: the card field a review comment is about.
+ * - `mustlist-card`: the card a Q&A discussion is about (its Discussion tab).
  */
 
 const PROPOSER = /<!-- mustlist-proposer: ([A-Za-z0-9-]{1,39}) -->/;
@@ -22,4 +23,13 @@ export function proposerOf(body: string | null | undefined, author: string): str
 export function fieldOf(body: string): { field: string | undefined; text: string } {
   const match = FIELD.exec(body);
   return { field: match?.[1], text: match ? body.slice(match[0].length) : body };
+}
+
+const CARD = /<!-- mustlist-card: ([a-z0-9-]+\/[a-z0-9-]+) -->/;
+
+export const cardMarker = (cardId: string) => `<!-- mustlist-card: ${cardId} -->`;
+
+/** The card id a discussion is about, from its body marker. */
+export function cardOf(body: string | null | undefined): string | undefined {
+  return CARD.exec(body ?? '')?.[1];
 }

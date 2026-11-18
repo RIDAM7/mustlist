@@ -1,4 +1,5 @@
-import { REPO, REQUESTS_CATEGORY } from '../links';
+import { CARD_DISCUSSIONS_CATEGORY, REPO, REQUESTS_CATEGORY } from '../links';
+import { cardMarker, cardOf } from '../markers';
 
 /**
  * Writes to GitHub as the signed-in person (their GitHub App user token).
@@ -148,6 +149,79 @@ export async function createRequest(
       }
     }`,
     { repositoryId: repo.repository.id, categoryId: category.id, title: input.title, body },
+  );
+  return data.createDiscussion.discussion;
+}
+
+/** The repository id and its Q&A category id, for a card's discussion. */
+async function cardCategory(token: string): Promise<{ repositoryId: string; categoryId: string }> {
+  const repo = await gql<{
+    repository: { id: string; discussionCategories: { nodes: { id: string; slug: string }[] } };
+  }>(
+    token,
+    `query($owner: String!, $name: String!) {
+      repository(owner: $owner, name: $name) { id discussionCategories(first: 25) { nodes { id slug } } }
+    }`,
+    repoVars,
+  );
+  const category = repo.repository.discussionCategories.nodes.find(
+    (c) => c.slug === CARD_DISCUSSIONS_CATEGORY,
+  );
+  if (!category) throw new GitHubWriteError('The Q&A discussion category is missing on GitHub');
+  return { repositoryId: repo.repository.id, categoryId: category.id };
+}
+
+export interface CardDiscussion {
+  id: string;
+  number: number;
+  url: string;
+}
+
+/** The card's Q&A discussion (the oldest one marked for it), if there is one. */
+export async function findCardDiscussion(
+  token: string,
+  cardId: string,
+): Promise<CardDiscussion | undefined> {
+  const { categoryId } = await cardCategory(token);
+  const data = await gql<{
+    repository: {
+      discussions: { nodes: (CardDiscussion & { body: string; createdAt: string })[] };
+    };
+  }>(
+    token,
+    `query($owner: String!, $name: String!, $category: ID!) {
+      repository(owner: $owner, name: $name) {
+        discussions(first: 100, categoryId: $category, orderBy: { field: CREATED_AT, direction: ASC }) {
+          nodes { id number url body createdAt }
+        }
+      }
+    }`,
+    { ...repoVars, category: categoryId },
+  );
+  const found = data.repository.discussions.nodes.find((d) => cardOf(d.body) === cardId);
+  return found ? { id: found.id, number: found.number, url: found.url } : undefined;
+}
+
+/** Opens a card's Q&A discussion: a short, neutral post the comments hang off. */
+export async function createCardDiscussion(
+  token: string,
+  input: { cardId: string; title: string; url: string },
+): Promise<CardDiscussion> {
+  const { repositoryId, categoryId } = await cardCategory(token);
+  const body = [
+    cardMarker(input.cardId),
+    `Questions, problems and ideas about the card **[${input.title}](${input.url})**.`,
+    '',
+    "Comments here show on the card's Discussion tab. To change the card itself, use **Suggest a change** on the card.",
+  ].join('\n');
+  const data = await gql<{ createDiscussion: { discussion: CardDiscussion } }>(
+    token,
+    `mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+      createDiscussion(input: { repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body }) {
+        discussion { id number url }
+      }
+    }`,
+    { repositoryId, categoryId, title: `${input.title} (${input.cardId})`, body },
   );
   return data.createDiscussion.discussion;
 }

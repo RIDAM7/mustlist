@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { postComment } from '@/lib/community/actions';
+import { postComment, startCardDiscussion } from '@/lib/community/actions';
 import { formatShortDate } from '@/lib/format';
 import { renderCommentMarkdown } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,7 @@ export function Thread({
   emptyLine = 'Discussion',
   githubUrl,
   request,
+  cardId,
 }: {
   comments: ThreadComment[];
   heading?: string;
@@ -53,14 +54,17 @@ export function Thread({
   githubUrl?: string;
   /** The request (discussion) number: with sign-in, replies are posted there. */
   request?: number;
+  /** A card's Discussion tab: the first comment opens the card's discussion. */
+  cardId?: string;
 }) {
   const [comments, setComments] = useState(initial);
   const [order, setOrder] = useState<'oldest' | 'newest'>('oldest');
   const [expanded, setExpanded] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const { mode, viewer, canSignIn, requireViewer, promptSignIn } = useViewer();
-  // Signed-in writes to GitHub need a discussion to post to.
-  const live = mode === 'github' && canSignIn && request !== undefined;
+  // Signed-in writes to GitHub need a discussion to post to (a card can open its own).
+  const [thread, setThread] = useState(request);
+  const live = mode === 'github' && canSignIn && (thread !== undefined || cardId !== undefined);
   const toast = useToast();
   const boxRef = useRef<HTMLTextAreaElement>(null);
 
@@ -90,11 +94,25 @@ export function Thread({
 
   /** Show the comment at once; with sign-in, post it to GitHub and roll back on failure. */
   const publish = (comment: ThreadComment, body: string, replyTo?: string) => {
-    if (!live || request === undefined) {
+    if (live && thread === undefined && cardId !== undefined) {
+      void startCardDiscussion({ cardId, body }).then((result) => {
+        if (result.ok) {
+          setThread(result.number);
+          patch(comment.id, { ...comment, id: result.id, url: result.url, date: result.createdAt });
+          toast('Comment posted on GitHub');
+        } else {
+          patch(comment.id, null);
+          toast(result.error);
+          if (result.signIn) promptSignIn('reply');
+        }
+      });
+      return;
+    }
+    if (!live || thread === undefined) {
       toast(replyTo ? 'Reply posted' : 'Comment posted');
       return;
     }
-    void postComment({ request, body, replyTo }).then((result) => {
+    void postComment({ request: thread, body, replyTo }).then((result) => {
       if (result.ok) {
         patch(comment.id, { ...comment, id: result.id, url: result.url, date: result.createdAt });
         toast(replyTo ? 'Reply posted on GitHub' : 'Comment posted on GitHub');

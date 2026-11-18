@@ -5,8 +5,10 @@ import { headers } from 'next/headers';
 import * as z from 'zod';
 import { stackTitle } from '@mustlist/schema/site';
 import { getAuth } from '@/lib/auth';
+import { getCard } from '@/lib/data';
+import { LIBRARY_URL } from '@/lib/site';
 import { topicName } from '@/lib/topics';
-import { appWritesEnabled } from './github/app';
+import { appWritesEnabled, installationToken } from './github/app';
 import * as proposals from './github/proposals';
 import * as gh from './github/write';
 import { COMMUNITY_TAG } from './load';
@@ -181,6 +183,43 @@ export async function setRequestState(input: z.infer<typeof stateInput>): Promis
       await gh.closeRequest(token, discussion.id, reason);
     }
     return {};
+  });
+}
+
+// --- Card discussions -----------------------------------------------------------
+
+const cardCommentInput = z.object({
+  cardId: z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/, 'Unknown card.'),
+  body: text(10_000, 'a comment'),
+});
+
+/**
+ * The first comment on a card's Discussion tab: finds or opens the card's Q&A
+ * discussion (opened by the Mustlist Library app when it is set up, else by the
+ * person), then posts the comment as the signed-in person.
+ */
+export async function startCardDiscussion(
+  input: z.infer<typeof cardCommentInput>,
+): Promise<
+  ActionResult<{ number: number; threadUrl: string; id: string; url: string; createdAt: string }>
+> {
+  const parsed = cardCommentInput.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const { cardId, body } = parsed.data;
+  const card = getCard(cardId);
+  if (!card) return { ok: false, error: 'Unknown card.' };
+  return write(async (token) => {
+    let thread = await gh.findCardDiscussion(token, cardId);
+    if (!thread) {
+      const opener = appWritesEnabled ? await installationToken() : token;
+      thread = await gh.createCardDiscussion(opener, {
+        cardId,
+        title: card.title,
+        url: `${LIBRARY_URL}/${cardId}`,
+      });
+    }
+    const comment = await gh.addComment(token, thread.id, body);
+    return { number: thread.number, threadUrl: thread.url, ...comment };
   });
 }
 

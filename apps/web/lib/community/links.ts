@@ -8,6 +8,9 @@ import { REPO_URL } from '@mustlist/schema/constants';
 /** Discussion category for requests; `.github/DISCUSSION_TEMPLATE/requests.yml` must match it. */
 export const REQUESTS_CATEGORY = 'requests';
 
+/** Discussion category for each card's Discussion tab (one thread per card). */
+export const CARD_DISCUSSIONS_CATEGORY = 'q-a';
+
 const [owner = '', name = ''] = new URL(REPO_URL).pathname.split('/').filter(Boolean);
 
 export const REPO = { owner, name, slug: `${owner}/${name}`, url: REPO_URL };
@@ -17,6 +20,9 @@ export const githubLinks = {
   newRequest: `${REPO_URL}/discussions/new?category=${REQUESTS_CATEGORY}`,
   /** Start a discussion about a card. */
   newDiscussion: `${REPO_URL}/discussions/new`,
+  /** Start a card's Q&A thread on GitHub (sign-in not set up). */
+  newCardDiscussion: (title: string) =>
+    `${REPO_URL}/discussions/new?category=${CARD_DISCUSSIONS_CATEGORY}&title=${encodeURIComponent(title)}`,
   discussions: `${REPO_URL}/discussions`,
   pulls: `${REPO_URL}/pulls`,
   /** Open pull requests that ask for the signed-in GitHub user's review. */

@@ -28,6 +28,14 @@ export interface CommunityData {
   requests: Request[];
   proposals: Proposal[];
   activity: ActivityEvent[];
+  /** Each card's Discussion tab: a Q&A discussion per card id, when one exists. */
+  cardThreads?: Record<string, CardThread>;
+}
+
+export interface CardThread {
+  number: number;
+  url: string;
+  comments: Comment[];
 }
 
 export type Role = 'maintainer' | 'reviewer' | 'contributor';
