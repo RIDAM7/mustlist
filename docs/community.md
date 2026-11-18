@@ -67,6 +67,14 @@ Without sign-in, every write button opens the matching page on GitHub. "Submit r
    - Set `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET` and `BETTER_AUTH_SECRET` (see [`apps/web/.env.example`](../apps/web/.env.example)).
    - For proposals from the editor and closing requests on merge: generate a private key in the app's settings and set it as `GITHUB_APP_PRIVATE_KEY` (the whole PEM; writing `\n` for each line break also works), plus the app's numeric `GITHUB_APP_ID`. Without them the editor copies the card and opens GitHub's editor instead.
 
+5. Keep the pull-request checks allowed. From 2 December 2026 GitHub blocks workflows triggered by `pull_request_target` in public repositories that have no Actions event policy, and the required **Sign-off** and **Card guard** checks use that trigger (`.github/workflows/pr.yml`). The repository has one policy (Settings → Actions → Policies, or the REST API `repos/{owner}/{repo}/actions/policies`): enforcement active, workflow path `.github/workflows/pr.yml` only, allowed events `pull_request_target`. It covers no other workflow, so CI, the bots and Dependabot are unaffected. If you rename `pr.yml`, update the policy's workflow path.
+
+## Settings this repository uses
+
+- **Ruleset "Protect main"** (Settings → Rules): pull requests need **Typecheck, lint, test, validate, build**, **Sign-off** and **Card guard** to pass; squash merges only; no force pushes or deletion. Repository admins can bypass it, so maintainers can still push small fixes directly.
+- **General**: auto-merge on (Accept uses it), branches deleted after merge, sign-off required for commits made in GitHub's web editor.
+- **npm**: the `mustlist` package trusts `.github/workflows/release.yml` (trusted publishing). Bump `packages/cli/package.json`'s version on main and the workflow publishes it with provenance; no npm token exists anywhere.
+
 Sessions have no database. Better Auth keeps them in encrypted, HttpOnly cookies, and refreshes the 8-hour GitHub token with its 6-month refresh token. A session lasts 30 days.
 
 The site caches what it reads. A webhook delivery marks it stale so the next visit reads GitHub again; without a webhook it refreshes every hour.
