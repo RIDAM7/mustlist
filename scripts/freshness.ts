@@ -72,7 +72,7 @@ async function latestVersions(cards: readonly CardFrontmatter[]): Promise<Map<st
   for (const name of names.sort()) {
     try {
       const response = await fetch(
-        `https://registry.npmjs.org/${name.replace('/', '%2F')}/latest`,
+        `https://registry.npmjs.org/${name.replaceAll('/', '%2F')}/latest`,
         {
           headers: { Accept: 'application/json', 'User-Agent': 'mustlist-workflows' },
           signal: AbortSignal.timeout(15_000),

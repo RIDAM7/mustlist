@@ -29,6 +29,15 @@ export function isVisible(status: Status, includeUnverified = false): boolean {
   return includeUnverified || PUBLIC_STATUSES.includes(status);
 }
 
+/** `/auth/nextjs-postgres/` -> `auth/nextjs-postgres`, in linear time (no regex backtracking). */
+export function trimSlashes(text: string): string {
+  let start = 0;
+  let end = text.length;
+  while (start < end && text[start] === '/') start++;
+  while (end > start && text[end - 1] === '/') end--;
+  return text.slice(start, end);
+}
+
 export function createLibrary(cards: readonly CardJSON[], options: LibraryOptions = {}): Library {
   const sorted = [...cards].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const byId = new Map(sorted.map((card) => [card.id, card]));
@@ -36,13 +45,7 @@ export function createLibrary(cards: readonly CardJSON[], options: LibraryOption
   const topics = [...new Set(sorted.map((card) => card.topic))].sort();
   return {
     cards: sorted,
-    get: (id) =>
-      byId.get(
-        id
-          .trim()
-          .replace(/^\/+|\/+$/g, '')
-          .replace(/\.md$/, ''),
-      ),
+    get: (id) => byId.get(trimSlashes(id.trim()).replace(/\.md$/, '')),
     visible: (includeUnverified = false) =>
       sorted.filter((card) => isVisible(card.status, includeUnverified)),
     index,

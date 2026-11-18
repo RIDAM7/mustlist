@@ -56,7 +56,9 @@ function shorten(text: string, max: number): string {
   return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:.]$/, '')}…`;
 }
 
-const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+/** Text for a markdown table cell: backslashes first, then pipes, so `\|` stays literal. */
+export const cell = (text: string) =>
+  text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
 
 /** The marked block, `\n` line endings, ≤ 8 KB (later cards are dropped to fit). */
 export function renderBlock(cards: readonly CardJSON[]): string {

@@ -2,8 +2,10 @@ import { BASE_PATH, DEFAULT_SITE_URL } from './constants';
 
 /** `https://example.com/` -> `https://example.com` */
 export function normaliseSiteUrl(siteUrl: string | undefined): string {
-  const value = siteUrl?.trim() || DEFAULT_SITE_URL;
-  return value.replace(/\/+$/, '');
+  let value = siteUrl?.trim() || DEFAULT_SITE_URL;
+  // A loop, not /\/+$/: that regex backtracks badly on long runs of slashes.
+  while (value.endsWith('/')) value = value.slice(0, -1);
+  return value;
 }
 
 /** Path of a card page under the site, for example `/library/auth/nextjs-postgres`. */

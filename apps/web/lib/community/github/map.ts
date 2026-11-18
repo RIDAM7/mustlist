@@ -119,7 +119,15 @@ export interface GhPullRequest {
 const login = (actor: GhActor | null) => actor?.login ?? 'ghost';
 const labelsOf = (node: { labels: { nodes: { name: string }[] } | null }) =>
   (node.labels?.nodes ?? []).map((label) => label.name.toLowerCase());
-const stripComments = (markdown: string) => markdown.replace(/<!--[\s\S]*?-->/g, '').trim();
+/** Removes HTML comments, including nested ones and a comment left open. */
+export function stripComments(markdown: string): string {
+  let text = markdown;
+  for (let previous = ''; previous !== text;) {
+    previous = text;
+    text = text.replace(/<!--[\s\S]*?-->/g, '');
+  }
+  return text.replace(/<!--/g, '').trim();
+}
 
 /**
  * Value of a form field in a discussion or pull request body, as GitHub renders
