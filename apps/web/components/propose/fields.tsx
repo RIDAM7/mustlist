@@ -195,17 +195,22 @@ export function IdInput({
   generated,
   label,
   onChange,
+  className,
 }: {
   id: string;
   value: string;
   generated: string;
   label: string;
   onChange: (value: string) => void;
+  className?: string;
 }) {
   return (
     <input
       id={id}
-      className="mono t-xs subtle h-7 w-[min(220px,40vw)] rounded border border-transparent bg-transparent px-1.5 outline-none hover:border-border focus:border-accent focus:text-fg"
+      className={cn(
+        'mono t-xs subtle h-7 w-[min(220px,40vw)] rounded border border-transparent bg-transparent px-1.5 outline-none hover:border-border focus:border-accent focus:text-fg',
+        className,
+      )}
       value={value}
       placeholder={generated || 'id'}
       aria-label={`${label} id`}

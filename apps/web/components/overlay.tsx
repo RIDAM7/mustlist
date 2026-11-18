@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -111,6 +112,23 @@ export function Menu({
   const menuId = useId();
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Keep the open menu on screen: a wide menu near the edge moves back inside.
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    const root = rootRef.current;
+    if (!open || !menu || !root) return;
+    // Move the box itself (not a transform), so it never widens the page.
+    const side = align === 'right' ? 'right' : 'left';
+    menu.style[side] = '';
+    const gutter = 8;
+    // Layout box, not getBoundingClientRect: the opening animation scales the menu.
+    const left = root.getBoundingClientRect().left + menu.offsetLeft;
+    const right = left + menu.offsetWidth;
+    const overflow = right - (document.documentElement.clientWidth - gutter);
+    const shift = overflow > 0 ? -Math.min(overflow, left - gutter) : Math.max(gutter - left, 0);
+    if (shift) menu.style[side] = `${side === 'left' ? shift : -shift}px`;
+  }, [open, align, rootRef]);
+
   useEffect(() => {
     if (open)
       menuRef.current
@@ -206,6 +224,7 @@ export function SelectMenu<T extends string>({
   onChange,
   icon,
   align = 'left',
+  className,
 }: {
   label: string;
   value: T;
@@ -213,6 +232,8 @@ export function SelectMenu<T extends string>({
   onChange: (value: T) => void;
   icon?: ReactNode;
   align?: 'left' | 'right';
+  /** Classes for the wrapper, e.g. a max width so a long choice is truncated. */
+  className?: string;
 }) {
   const current = options.find((option) => option.value === value)?.label ?? value;
   return (
@@ -220,15 +241,23 @@ export function SelectMenu<T extends string>({
       label={label}
       align={align}
       minWidth={180}
+      className={className}
       items={options.map((option) => ({
         label: option.label,
         selected: option.value === value,
         onSelect: () => onChange(option.value),
       }))}
       trigger={(props) => (
-        <button type="button" className="select" {...props} aria-label={`${label}: ${current}`}>
+        <button
+          type="button"
+          className="select"
+          {...props}
+          aria-label={`${label}: ${current}`}
+          title={`${label}: ${current}`}
+        >
           {icon}
-          <span className="k">{label}</span> {current}
+          <span className="k">{label}</span>
+          <span className="v">{current}</span>
           <svg className="i i-sm" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m6 9 6 6 6-6" />
           </svg>

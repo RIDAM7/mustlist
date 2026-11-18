@@ -458,13 +458,15 @@ export function DecisionsEditor({ draft, set }: { draft: Draft; set: SetDraft })
               </div>
               <div role="radiogroup" aria-label={`Decision ${n} default answer`}>
                 <div className="label mb-1.5">Answers</div>
-                <ul className="flex flex-col gap-1.5">
+                <ul className="flex flex-col gap-3">
                   {decision.answers.map((answer, answerIndex) => {
                     const isDefault = decision.defaultKey === answer.key;
                     return (
+                      // Two lines: default, answer and remove on top; what it favours and
+                      // its id below, so a long option name never squeezes the answer.
                       <li
                         key={answer.key}
-                        className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap"
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-1"
                       >
                         <button
                           type="button"
@@ -483,7 +485,7 @@ export function DecisionsEditor({ draft, set }: { draft: Draft; set: SetDraft })
                         </button>
                         <input
                           id={`f-decisions-${index}-options-${answerIndex}-label`}
-                          className="input h-8 min-w-0 flex-1 text-[13px]"
+                          className="input h-8 min-w-0 text-[13px]"
                           value={answer.label}
                           aria-label={`Decision ${n} answer ${answerIndex + 1}`}
                           placeholder="Answer"
@@ -491,23 +493,26 @@ export function DecisionsEditor({ draft, set }: { draft: Draft; set: SetDraft })
                             updateAnswer(answerIndex, { label: event.target.value })
                           }
                         />
-                        <SelectMenu
-                          label="Favours"
-                          value={answer.pointsTo}
-                          options={favourOptions}
-                          align="right"
-                          onChange={(pointsTo) => updateAnswer(answerIndex, { pointsTo })}
-                        />
-                        <IdInput
-                          id={`f-decisions-${index}-options-${answerIndex}-id`}
-                          value={answer.id}
-                          generated={aIds[answerIndex] ?? ''}
-                          label={`Answer ${answerIndex + 1}`}
-                          onChange={(id) => updateAnswer(answerIndex, { id })}
-                        />
+                        <div className="col-span-3 row-start-2 flex min-w-0 items-center gap-1.5 sm:col-span-1 sm:col-start-2">
+                          <SelectMenu
+                            label="Favours"
+                            value={answer.pointsTo}
+                            options={favourOptions}
+                            className="min-w-0"
+                            onChange={(pointsTo) => updateAnswer(answerIndex, { pointsTo })}
+                          />
+                          <IdInput
+                            id={`f-decisions-${index}-options-${answerIndex}-id`}
+                            value={answer.id}
+                            generated={aIds[answerIndex] ?? ''}
+                            label={`Answer ${answerIndex + 1}`}
+                            className="min-w-32 flex-1 text-right"
+                            onChange={(id) => updateAnswer(answerIndex, { id })}
+                          />
+                        </div>
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm btn-icon"
+                          className="btn btn-ghost btn-sm btn-icon col-start-3 row-start-1"
                           aria-label={`Remove answer ${answerIndex + 1}`}
                           disabled={decision.answers.length <= COUNT_LIMITS.decisionOptions[0]}
                           onClick={() =>
