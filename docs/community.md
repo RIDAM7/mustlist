@@ -77,4 +77,4 @@ Without sign-in, every write button opens the matching page on GitHub. "Submit r
 
 Sessions have no database. Better Auth keeps them in encrypted, HttpOnly cookies, and refreshes the 8-hour GitHub token with its 6-month refresh token. A session lasts 30 days.
 
-The site caches what it reads. A webhook delivery marks it stale so the next visit reads GitHub again; without a webhook it refreshes every hour.
+The site caches what it reads. A webhook delivery marks it stale: the next visit still gets the cached page at once and starts a GitHub read in the background, so the visit after it shows the change. Without a webhook it refreshes every hour. Changes made on the site itself (a reply, a vote, a proposal) show up straight away for the person who made them.

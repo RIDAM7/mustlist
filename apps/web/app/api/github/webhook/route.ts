@@ -24,8 +24,10 @@ export async function POST(request: Request): Promise<Response> {
 
   const event = request.headers.get('x-github-event') ?? '';
   const refresh = REFRESH_EVENTS.has(event);
-  // Serve fresh data on the next request: a reply on GitHub should show up right away.
-  if (refresh) revalidateTag(COMMUNITY_TAG, { expire: 0 });
+  // Stale-while-revalidate: the next visitor gets the cached page at once and
+  // the refresh runs in the background, so GitHub activity (every CI check
+  // sends several events) never makes a visitor wait for a full GitHub read.
+  if (refresh) revalidateTag(COMMUNITY_TAG, 'max');
 
   if (event === 'pull_request' && appWritesEnabled) {
     const payload = JSON.parse(body) as MergedPayload;
@@ -56,7 +58,7 @@ async function resolveRequests(pr: NonNullable<MergedPayload['pull_request']>): 
       );
       await closeRequest(token, discussion.id, 'RESOLVED');
     }
-    revalidateTag(COMMUNITY_TAG, { expire: 0 });
+    revalidateTag(COMMUNITY_TAG, 'max');
   } catch (error) {
     console.error('[webhook] could not resolve linked requests', error);
   }

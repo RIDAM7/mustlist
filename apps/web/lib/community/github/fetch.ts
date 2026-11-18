@@ -284,13 +284,26 @@ export async function fetchCommunity({
   cardIds: string[];
 }): Promise<CommunityData> {
   const vars = { owner: REPO.owner, name: REPO.name };
-  const repo = await graphql<{
-    repository: {
-      discussionCategories: { nodes: { id: string; slug: string }[] };
-      maintainers: { text?: string } | null;
-      codeowners: { text?: string } | null;
-    };
-  }>(token, REPO_QUERY, vars);
+  // Two rounds instead of three: pull requests don't need the categories, and
+  // the card files only need the pull requests.
+  const [repo, allPulls] = await Promise.all([
+    graphql<{
+      repository: {
+        discussionCategories: { nodes: { id: string; slug: string }[] };
+        maintainers: { text?: string } | null;
+        codeowners: { text?: string } | null;
+      };
+    }>(token, REPO_QUERY, vars),
+    paged<GhPullRequest>(async (after) => {
+      const data = await graphql<{ repository: { pullRequests: Page<GhPullRequest> } }>(
+        token,
+        PULLS_QUERY,
+        { ...vars, after },
+      );
+      return data.repository.pullRequests;
+    }),
+  ]);
+  const pulls = allPulls.filter((pr) => cardFileOf(pr));
 
   const category = repo.repository.discussionCategories.nodes.find(
     (c) => c.slug === REQUESTS_CATEGORY,
@@ -314,33 +327,10 @@ export async function fetchCommunity({
       return data.repository.discussions;
     });
 
-  const [discussions, allPulls, qa] = await Promise.all([
-    category
-      ? paged<GhDiscussion>(async (after) => {
-          const data = await graphql<{ repository: { discussions: Page<GhDiscussion> } }>(
-            token,
-            DISCUSSIONS_QUERY,
-            {
-              ...vars,
-              category: category.id,
-              after,
-            },
-          );
-          return data.repository.discussions;
-        })
-      : Promise.resolve([]),
-    paged<GhPullRequest>(async (after) => {
-      const data = await graphql<{ repository: { pullRequests: Page<GhPullRequest> } }>(
-        token,
-        PULLS_QUERY,
-        {
-          ...vars,
-          after,
-        },
-      );
-      return data.repository.pullRequests;
-    }),
+  const [discussions, qa, cards] = await Promise.all([
+    category ? discussionsIn(category.id) : Promise.resolve([]),
     cardCategory ? discussionsIn(cardCategory.id) : Promise.resolve([]),
+    readCards(token, pulls),
   ]);
 
   // Each card's Discussion tab: the oldest Q&A discussion marked for that card.
@@ -355,8 +345,6 @@ export async function fetchCommunity({
     };
   }
 
-  const pulls = allPulls.filter((pr) => cardFileOf(pr));
-  const cards = await readCards(token, pulls);
   const requestNumbers = new Set(discussions.map((d) => d.number));
 
   const proposals = pulls
