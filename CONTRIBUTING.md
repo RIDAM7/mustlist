@@ -16,7 +16,7 @@ You can also report a problem with a card using the **Correction** or **Card fee
 
 ## Propose a card or a change
 
-**On the site (no tools needed).** Sign in with GitHub at [ridamagrawal.com/library](https://ridamagrawal.com/library), then use **Propose a card** or **Suggest a change** on any card. The editor checks the card as you type, saves your draft in your browser, and **Submit for review** opens the pull request for you: the Mustlist Library app commits your card in your name, signed off, and names you as the proposer. Send it again from the editor to add a revision.
+**On the site (no tools needed).** Sign in with GitHub at [ridamagrawal.com/library](https://ridamagrawal.com/library), then use **Propose a card** or **Suggest a change** on any card. The editor checks the card as you type, saves your draft in your browser, and **Submit for review** opens the pull request for you: the Mustlist Library app commits your card in your name, signed off, and names you as the proposer. Send it again from the editor to add a revision. You can have up to 3 proposals from the site open at once; revisions don't count.
 
 **With git (5 minutes).**
 

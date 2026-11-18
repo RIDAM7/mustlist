@@ -2,6 +2,12 @@ import 'server-only';
 import { parseCard } from '@mustlist/schema';
 import { promoteCard, PromoteError } from '@mustlist/schema/promote';
 import { REPO } from '../links';
+import {
+  MAX_OPEN_SITE_PROPOSALS,
+  openSiteProposals,
+  siteBranch,
+  tooManyProposals,
+} from '../limits';
 import { fieldMarker, proposerMarker, proposerOf } from '../markers';
 import { installationToken } from './app';
 import { GitHubWriteError } from './write';
@@ -21,7 +27,6 @@ import { GitHubWriteError } from './write';
  */
 
 export const ACCEPTED_LABEL = 'accepted';
-export const SITE_BRANCH_PREFIX = 'proposals/';
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH';
 
 async function rest<T>(
@@ -137,7 +142,7 @@ export async function submitProposal(
   const me = await viewerIdentity(userToken);
   const app = await installationToken();
   const path = `cards/${input.cardId}.md`;
-  const branch = `${SITE_BRANCH_PREFIX}${me.login.toLowerCase()}/${input.cardId.replace('/', '-')}`;
+  const branch = siteBranch(me.login, input.cardId);
 
   const onMain = await fileOnRef(app, path, 'main');
   if (input.mode === 'new' && onMain) {
@@ -152,6 +157,20 @@ export async function submitProposal(
   );
 
   if (!open) {
+    // A new proposal (not a revision): at most MAX_OPEN_SITE_PROPOSALS open at once.
+    const pulls: { head: { ref: string } }[] = [];
+    for (let page = 1; page <= 5; page++) {
+      const batch = await rest<{ head: { ref: string } }[]>(
+        app,
+        'GET',
+        `${repoPath}/pulls?state=open&per_page=100&page=${page}`,
+      );
+      pulls.push(...batch);
+      if (batch.length < 100) break;
+    }
+    const count = openSiteProposals(pulls, me.login);
+    if (count >= MAX_OPEN_SITE_PROPOSALS) throw new GitHubWriteError(tooManyProposals(count));
+
     // A fresh branch from main (reusing the name of an older, closed proposal).
     const main = await rest<{ object: { sha: string } }>(
       app,
