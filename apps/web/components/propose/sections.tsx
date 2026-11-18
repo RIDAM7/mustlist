@@ -57,6 +57,8 @@ export const LENS_SHORT: Record<Lens, string> = {
 
 const LENS_OPTIONS = LENSES.map((lens) => ({ value: lens, label: LENS_SHORT[lens] }));
 const TYPE_OPTIONS = VERIFY_TYPES.map((type) => ({ value: type, label: type }));
+/** An item header's id box: fills the space left, down to 6rem, so the row stays one line. */
+const CONTROL_ID = 'min-w-24 max-w-[220px] flex-1';
 
 /** Replace item `index` of a list with `patch` applied. */
 function patchAt<T>(items: readonly T[], index: number, patch: Partial<T>): T[] {
@@ -346,6 +348,7 @@ export function ChecklistEditor({ draft, set }: { draft: Draft; set: SetDraft })
                     value={item.id}
                     generated={ids[index] ?? ''}
                     label={`Item ${n}`}
+                    className={CONTROL_ID}
                     onChange={(id) => update({ id })}
                   />
                 </>
@@ -439,6 +442,7 @@ export function DecisionsEditor({ draft, set }: { draft: Draft; set: SetDraft })
                   value={decision.id}
                   generated={ids[index] ?? ''}
                   label={`Decision ${n}`}
+                  className={CONTROL_ID}
                   onChange={(id) => update({ id })}
                 />
               }
@@ -617,6 +621,7 @@ export function OptionsEditor({ draft, set }: { draft: Draft; set: SetDraft }) {
                     value={option.id}
                     generated={ids[index] ?? ''}
                     label={`Option ${n}`}
+                    className={CONTROL_ID}
                     onChange={(id) => update({ id })}
                   />
                 </>
@@ -946,6 +951,7 @@ export function VerifyEditor({ draft, set }: { draft: Draft; set: SetDraft }) {
                     value={check.id}
                     generated={ids[index] ?? ''}
                     label={`Check ${n}`}
+                    className={CONTROL_ID}
                     onChange={(id) => update({ id })}
                   />
                 </>

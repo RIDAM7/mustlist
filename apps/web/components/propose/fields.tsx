@@ -105,6 +105,39 @@ export function ItemShell({
   onRemove: () => void;
   canRemove?: boolean;
 }) {
+  // Rendered in one of two places (the other is display: none, so it is also
+  // hidden from screen readers): under the number on phones, top right above.
+  const actions = (
+    <>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm btn-icon"
+        aria-label={`Move ${label} up`}
+        disabled={index === 0}
+        onClick={() => onMove(index, index - 1)}
+      >
+        <Icon name="chevronUp" size="sm" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm btn-icon"
+        aria-label={`Move ${label} down`}
+        disabled={index === total - 1}
+        onClick={() => onMove(index, index + 1)}
+      >
+        <Icon name="chevronDown" size="sm" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm btn-icon"
+        aria-label={`Remove ${label}`}
+        disabled={!canRemove}
+        onClick={onRemove}
+      >
+        <Icon name="trash" size="sm" />
+      </button>
+    </>
+  );
   return (
     <li
       className={cn(
@@ -123,38 +156,13 @@ export function ItemShell({
           <Icon name="grip" />
         </span>
         <span className="mono t-xs subtle">{n}</span>
+        <div className="mt-1.5 flex flex-col items-center gap-0.5 sm:hidden">{actions}</div>
       </div>
       <div className="flex min-w-0 flex-col gap-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          {controls}
-          <div className="flex-1" />
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-icon"
-            aria-label={`Move ${label} up`}
-            disabled={index === 0}
-            onClick={() => onMove(index, index - 1)}
-          >
-            <Icon name="chevronUp" size="sm" />
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-icon"
-            aria-label={`Move ${label} down`}
-            disabled={index === total - 1}
-            onClick={() => onMove(index, index + 1)}
-          >
-            <Icon name="chevronDown" size="sm" />
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-icon"
-            aria-label={`Remove ${label}`}
-            disabled={!canRemove}
-            onClick={onRemove}
-          >
-            <Icon name="trash" size="sm" />
-          </button>
+        {/* Controls wrap inside their own group, never pushing the buttons onto a new line. */}
+        <div className={cn('flex items-start gap-2', !controls && 'max-sm:hidden')}>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">{controls}</div>
+          <div className="hidden h-8 shrink-0 items-center gap-1 sm:flex">{actions}</div>
         </div>
         {children}
       </div>
@@ -208,9 +216,10 @@ export function IdInput({
     <input
       id={id}
       className={cn(
-        'mono t-xs subtle h-7 w-[min(220px,40vw)] rounded border border-transparent bg-transparent px-1.5 outline-none hover:border-border focus:border-accent focus:text-fg',
+        'mono t-xs subtle h-7 w-[min(220px,40vw)] text-ellipsis rounded border border-transparent bg-transparent px-1.5 outline-none hover:border-border focus:border-accent focus:text-fg',
         className,
       )}
+      title={value || generated || undefined}
       value={value}
       placeholder={generated || 'id'}
       aria-label={`${label} id`}
