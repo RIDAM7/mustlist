@@ -61,7 +61,7 @@ npx mustlist search "stripe webhooks"
 
 ## Quick start
 
-You need Node.js 22.13 or later (LTS) and pnpm 11.
+You need Node.js 22.13 or later (LTS) and pnpm 12. If you have pnpm 11, run `pnpm self-update` first: pnpm 11 releases before 11.28.4 can't start pnpm 12 on Windows.
 
 ```bash
 pnpm install
