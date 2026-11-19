@@ -173,7 +173,7 @@ The validator warns at 90% of each limit.
 **Safety** (card text is data, never commands)
 
 - Fenced code blocks only in `ts`, `tsx`, `js`, `sql`, `json` or `yaml`, at most 15 lines, as illustrations. No shell blocks and no unlabelled or indented code blocks.
-- No text that addresses the agent beyond the card's purpose: "ignore previous instructions", "system prompt", "you must run", "execute the following", download-and-run, piping `curl` into a shell, decoding base64, sending data to an address, or asking to read `.env`, keys or credentials.
+- No text that addresses the agent beyond the card's purpose: "ignore previous instructions", "system prompt", "you must run", "execute the following", download-and-run, piping `curl` into a shell, decoding base64, sending data to an address the text names (a URL, or "this", "that", "the following", "my" or "our" URL, endpoint, webhook, server, address or email), or asking to read `.env`, keys or credentials. Ordinary feature text stays fine: "send a reset link to the user", "upload files to S3", "send the ID token to your server".
 - No raw HTML, HTML comments or invisible Unicode characters (they can hide text).
 - Links: `https://` only. No executables, scripts or archives, no URL shorteners, no raw IP addresses or `localhost`, no user names or passwords in URLs.
 - No secrets or credentials, real or example-looking.

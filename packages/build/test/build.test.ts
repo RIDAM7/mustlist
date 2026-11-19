@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { CardInput } from '@mustlist/validator';
 import { BuildError, buildArtifacts, loadSearchIndex } from '../src/index';
+import { STALE_NOTE } from '../src/outputs';
 
 const fixtures = fileURLToPath(new URL('../../../fixtures/', import.meta.url));
 const SITE = 'https://example.test';
@@ -45,9 +46,26 @@ describe('buildArtifacts', () => {
     expect([...second]).toEqual([...first]);
   });
 
-  it('lists only verified cards in llms.txt', () => {
+  it('lists verified cards in llms.txt, and no drafts', () => {
     const llms = buildArtifacts(inputs(), SITE).files.get('llms.txt') ?? '';
     expect(llms).toContain('https://example.test/library/example/express-postgres.md');
+    expect(llms).not.toContain('nextjs-postgres');
+    expect(llms).not.toContain(STALE_NOTE);
+  });
+
+  it('keeps a stale card in llms.txt, marked as being re-checked', () => {
+    const [draft, verified] = inputs();
+    if (!draft || !verified) throw new Error('fixtures missing');
+    const stale = {
+      ...verified,
+      text: verified.text.replace(/^status: verified$/m, 'status: stale'),
+    };
+    expect(stale.text).toMatch(/^status: stale$/m);
+    const llms = buildArtifacts([draft, stale], SITE).files.get('llms.txt') ?? '';
+    expect(llms).toContain(
+      `(https://example.test/library/example/express-postgres.md) ${STALE_NOTE}:`,
+    );
+    expect(llms).toContain(`A card marked ${STALE_NOTE}`);
     expect(llms).not.toContain('nextjs-postgres');
   });
 
