@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import { CodeCopyHandler } from '@/components/client-bits';
 import { Footer } from '@/components/footer';
 import { SearchProvider } from '@/components/search-palette';
@@ -69,6 +70,13 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
             </SearchProvider>
           </ViewerProvider>
         </ToastProvider>
+        {/*
+          Vercel Web Analytics: cookieless page views, no banner needed. The
+          library is served on ridamagrawal.com/library, where the root
+          /_vercel/insights belongs to the site's own Web Analytics, so the
+          script and endpoint are pinned there (not under the /library basePath).
+        */}
+        <Analytics scriptSrc="/_vercel/insights/script.js" endpoint="/_vercel/insights" />
       </body>
     </html>
   );

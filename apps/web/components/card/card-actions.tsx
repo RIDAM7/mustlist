@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { track } from '@vercel/analytics';
 import { BASE_PATH } from '@mustlist/schema/constants';
 import { Icon } from '../icons';
 import { Menu, type MenuItem } from '../overlay';
@@ -22,7 +23,11 @@ export function CardActions({
 }) {
   const copy = useCopy();
   const router = useRouter();
-  const copyCard = () => void copy(message, 'Copied · card + verify checks, as markdown');
+  const copyCard = () => {
+    // Recorded only on Vercel plans with custom events; elsewhere it is dropped.
+    track('Copy for agent', { card: id });
+    void copy(message, 'Copied · card + verify checks, as markdown');
+  };
 
   const more: MenuItem[] = [
     { label: 'Discuss', icon: <Icon name="comment" />, href: `/${id}/discussion` },
